@@ -1,0 +1,22 @@
+{
+  "name": "bytelytic-clinic-os",
+  "version": "1.0.0",
+  "description": "Bytelytic Clinic OS — AI-powered front desk operating system for clinics",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "@supabase/supabase-js": "^2.39.0",
+    "twilio": "^5.0.0",
+    "retell-sdk": "^4.0.0",
+    "googleapis": "^140.0.0",
+    "node-cron": "^3.0.3",
+    "axios": "^1.6.0",
+    "dotenv": "^16.4.0",
+    "cors": "^2.8.5",
+    "morgan": "^1.10.0"
+  }
+}
