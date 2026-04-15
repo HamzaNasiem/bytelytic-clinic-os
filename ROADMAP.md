@@ -214,7 +214,8 @@ Password: Bytelytic@2025
 
 #### 7. Vercel Deployment (Dashboard)
 
-- Deploy dashboard to `app.bytelytic.com` (or similar)
+- dashboard k tamam pages ko premium cinematic best laxuary look do sb kuch clickable ho page kam krrhe ho      responsive hoto phir deploay krdo 
+- Deploy dashboard 
 - Doctor gets a permanent URL to check — no localhost needed
 - Update CORS in Railway to allow Vercel domain
 

@@ -1,62 +1,59 @@
 import React from "react";
-import { Search, Bell, Mail, Settings, Menu } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 
 const Header = ({ onMenuClick }) => {
   const clinicInfo = JSON.parse(localStorage.getItem("clinic-info") || "{}");
   const clinicName = clinicInfo.clinicName || "Clinic";
+  const initials = clinicName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-10 w-full">
+    <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-10">
       <div className="flex items-center gap-4">
-        {/* Hamburger Menu for Mobile */}
         <button
           onClick={onMenuClick}
-          className="p-2 -ml-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg lg:hidden transition-colors"
+          className="p-2 -ml-1 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl lg:hidden transition-colors"
         >
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5" />
         </button>
 
-        {/* Search - Hidden on small screens */}
-        <div className="relative hidden md:block w-full max-w-[200px] lg:max-w-md xl:w-96">
-          <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="relative hidden md:block">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Type to search..."
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-transparent focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 rounded-xl transition-all outline-none text-sm font-medium text-slate-700 placeholder-slate-400"
+            placeholder="Search..."
+            className="w-64 pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 rounded-xl outline-none text-sm text-slate-700 placeholder-slate-400 transition-all"
           />
         </div>
       </div>
 
-      {/* Right Actions */}
-      <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
-        <div className="flex items-center gap-1 sm:gap-2 text-slate-400">
-          <button className="p-2 hover:bg-slate-50 hover:text-slate-700 rounded-lg transition-colors hidden sm:block">
-            <Settings className="w-5 h-5" />
-          </button>
-          <button className="p-2 hover:bg-slate-50 hover:text-slate-700 rounded-lg transition-colors relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
-          </button>
-          <button className="p-2 hover:bg-slate-50 hover:text-slate-700 rounded-lg transition-colors hidden sm:block">
-            <Mail className="w-5 h-5" />
-          </button>
+      <div className="flex items-center gap-3">
+        {/* Live indicator */}
+        <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-semibold">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          AI Live
         </div>
 
-        <div className="h-8 w-px bg-slate-200 hidden sm:block"></div>
+        <button className="relative p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+        </button>
 
-        <div className="flex items-center gap-3 cursor-pointer group">
+        <div className="h-6 w-px bg-slate-200" />
+
+        <div className="flex items-center gap-2.5 cursor-pointer group">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold text-slate-800 group-hover:text-brand-600 transition-colors">
+            <p className="text-sm font-semibold text-slate-800 group-hover:text-brand-600 transition-colors leading-tight">
               {clinicName}
             </p>
-            <p className="text-xs text-slate-500 font-medium">Clinic Owner</p>
+            <p className="text-xs text-slate-400">Clinic Owner</p>
           </div>
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand-100 border border-brand-200 flex items-center justify-center text-brand-600 font-bold overflow-hidden shadow-sm flex-shrink-0">
-            <img
-              src="https://api.dicebear.com/7.x/notionists/svg?seed=Sarah&backgroundColor=e1ebfe"
-              alt="Avatar"
-              className="w-full h-full object-cover"
-            />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-sm font-bold shadow-sm flex-shrink-0">
+            {initials}
           </div>
         </div>
       </div>
