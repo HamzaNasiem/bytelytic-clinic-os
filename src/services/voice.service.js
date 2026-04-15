@@ -100,12 +100,26 @@ If no appointment was requested, set hasBookingIntent to false and all other fie
     const parsed = JSON.parse(cleaned);
     if (!parsed.hasBookingIntent) return null;
 
-    // Sanitize phone — free LLMs sometimes return decimals or spaces in numbers
-    // Keep only digits and leading +, then ensure E.164 format
+    // Sanitize phone — free LLMs sometimes return local formats or decimals
     if (parsed.patientPhone) {
-      const digits = parsed.patientPhone.replace(/[^\d+]/g, "");
-      // Must start with + and have 10–15 digits after it
-      parsed.patientPhone = /^\+\d{10,15}$/.test(digits) ? digits : null;
+      let p = parsed.patientPhone.replace(/[^\d+]/g, "");
+
+      // Normalize common local formats → E.164
+      // Pakistan: 03XXXXXXXXX or +03XXXXXXXXX → +923XXXXXXXXX
+      if (/^\+?03\d{9}$/.test(p)) {
+        p = "+92" + p.replace(/^\+?0/, "");
+      }
+      // US: 10-digit without country code → +1XXXXXXXXXX
+      else if (/^\d{10}$/.test(p)) {
+        p = "+1" + p;
+      }
+      // Add + if missing but has country code digits (11–15 digits)
+      else if (/^\d{11,15}$/.test(p)) {
+        p = "+" + p;
+      }
+
+      // Final validation: must be E.164 (+countrycode number, 10–15 digits total)
+      parsed.patientPhone = /^\+\d{10,15}$/.test(p) ? p : null;
     }
 
     return parsed;
