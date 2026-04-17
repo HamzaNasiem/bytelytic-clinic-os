@@ -96,4 +96,38 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 
+// POST /clinics/:id/factory-reset — completely wipe clinic's daily operational data
+router.post("/:id/factory-reset", async (req, res, next) => {
+  try {
+    if (req.params.id !== req.clinicId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const { confirmation } = req.body;
+    if (confirmation !== "DELETE EVERYTHING") {
+      return res.status(400).json({ error: "Invalid confirmation phrase" });
+    }
+
+    // Delete dynamically in parallel
+    // (Note: clinics & configuration are preserved)
+    const [revErr, smsErr, callsErr, apptErr, patientsErr] = await Promise.all([
+      supabase.from("revenue_events").delete().eq("clinic_id", req.clinicId),
+      supabase.from("sms_messages").delete().eq("clinic_id", req.clinicId),
+      supabase.from("calls").delete().eq("clinic_id", req.clinicId),
+      supabase.from("appointments").delete().eq("clinic_id", req.clinicId),
+      supabase.from("patients").delete().eq("clinic_id", req.clinicId),
+    ]);
+
+    // Throw if any error occurs
+    const error = revErr.error || smsErr.error || callsErr.error || apptErr.error || patientsErr.error;
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.json({ success: true, message: "Factory reset complete." });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

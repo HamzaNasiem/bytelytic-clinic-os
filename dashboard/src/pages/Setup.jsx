@@ -14,6 +14,7 @@ import {
   Shield,
   Wifi,
   Database,
+  AlertTriangle,
 } from "lucide-react";
 import api from "../lib/api";
 
@@ -53,6 +54,10 @@ const Setup = () => {
   const [savingNumber, setSavingNumber] = useState(false);
   const [msg, setMsg] = useState(null);
   const [twilioNumber, setTwilioNumber] = useState("");
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [isWiping, setIsWiping] = useState(false);
 
   useEffect(() => {
     const fetchClinic = async () => {
@@ -112,6 +117,26 @@ const Setup = () => {
     const token = localStorage.getItem("sb-token");
     const base = import.meta.env.VITE_API_URL || "http://localhost:3000";
     window.location.href = `${base}/auth/google?token=${encodeURIComponent(token)}`;
+  };
+
+  const handleFactoryReset = async () => {
+    setIsWiping(true);
+    setMsg(null);
+    try {
+      const info = JSON.parse(localStorage.getItem("clinic-info") || "{}");
+      if (!info.clinicId) throw new Error("No clinic ID — please log out and back in");
+      await api.post(`/clinics/${info.clinicId}/factory-reset`, { confirmation: deleteConfirmation });
+      setMsg({ type: "success", text: "Factory reset complete. All patients, calls, and appointments wiped." });
+      setShowDeleteModal(false);
+      setDeleteConfirmation("");
+      // Force reload to flush everything
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      setMsg({ type: "error", text: err.response?.data?.error || err.message });
+      setIsWiping(false);
+      setShowDeleteModal(false); // Close modal so user can see the error toast!
+      setDeleteConfirmation("");
+    }
   };
 
   const webhookUrl = `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/webhooks/retell`;
@@ -423,8 +448,82 @@ const Setup = () => {
               ))}
             </div>
           </div>
+
+          {/* Danger Zone */}
+          <div className="card p-5 border border-[#ffcdd2] bg-[#fff5f6]">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-5 h-5 text-[#d32f2f]" />
+              <h3 className="text-sm font-bold text-[#d32f2f]">Danger Zone</h3>
+            </div>
+            <p className="text-xs text-[#d32f2f]/80 mb-4 leading-relaxed">
+              Permanently wipe all operational data (patients, appointments, call logs). Your Retell/Twilio configurations will be preserved.
+            </p>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="w-full py-2.5 rounded-[0.625rem] font-bold text-sm transition-all hover:bg-[#d32f2f] hover:text-white"
+              style={{ backgroundColor: "#fce4ec", color: "#d32f2f" }}
+            >
+              Factory Reset Data
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* ── Factory Reset Confirmation Modal ───────────────────── */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="card w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-[#fce4ec] flex items-center justify-center text-[#d32f2f]">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <h2 className="text-lg font-bold text-on-surface">Factory Reset</h2>
+            </div>
+            <p className="text-sm text-on-surface-variant mb-4 leading-relaxed mt-3">
+              This will permanently delete <strong className="text-on-surface">all patients, appointments, call logs, SMS logs, and revenue records!</strong>
+              <br /><br />
+              This action <strong>cannot</strong> be undone.
+            </p>
+            
+            <div className="mb-4">
+              <label className="overline mb-1 block">Please type <span className="text-[#d32f2f] font-mono lowercase">DELETE EVERYTHING</span> to confirm.</label>
+              <input 
+                type="text" 
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                className="w-full bg-surface-container border border-error/30 focus:border-error rounded-lg px-3 py-2 text-sm outline-none" 
+                placeholder="DELETE EVERYTHING" 
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6 border-t border-surface-container pt-4">
+              <button 
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmation("");
+                }} 
+                disabled={isWiping}
+                className="px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container rounded-lg transition-colors"
+               >
+                 Cancel
+               </button>
+              <button 
+                onClick={handleFactoryReset}
+                disabled={isWiping || deleteConfirmation !== "DELETE EVERYTHING"}
+                className="px-5 py-2 text-sm font-semibold text-white bg-[#d32f2f] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+               >
+                {isWiping ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Wiping...
+                  </div>
+                ) : (
+                  "I understand, delete data"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
