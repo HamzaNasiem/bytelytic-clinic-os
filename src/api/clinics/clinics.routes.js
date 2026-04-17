@@ -108,21 +108,29 @@ router.post("/:id/factory-reset", async (req, res, next) => {
       return res.status(400).json({ error: "Invalid confirmation phrase" });
     }
 
-    // Delete dynamically in parallel
-    // (Note: clinics & configuration are preserved)
-    const [revErr, smsErr, callsErr, apptErr, patientsErr] = await Promise.all([
-      supabase.from("revenue_events").delete().eq("clinic_id", req.clinicId),
-      supabase.from("sms_messages").delete().eq("clinic_id", req.clinicId),
-      supabase.from("calls").delete().eq("clinic_id", req.clinicId),
-      supabase.from("appointments").delete().eq("clinic_id", req.clinicId),
-      supabase.from("patients").delete().eq("clinic_id", req.clinicId),
-    ]);
+    // Delete sequentially to respect foreign key constraints:
+    // 1. sms_messages (references appointments and patients)
+    // 2. revenue_events (references appointments/patients)
+    // 3. calls (references patients)
+    // 4. appointments (references patients)
+    // 5. patients (root)
+    
+    let error;
 
-    // Throw if any error occurs
-    const error = revErr.error || smsErr.error || callsErr.error || apptErr.error || patientsErr.error;
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
+    const res1 = await supabase.from("sms_messages").delete().eq("clinic_id", req.clinicId);
+    if (res1.error) throw new Error(res1.error.message);
+
+    const res2 = await supabase.from("revenue_events").delete().eq("clinic_id", req.clinicId);
+    if (res2.error) throw new Error(res2.error.message);
+
+    const res3 = await supabase.from("calls").delete().eq("clinic_id", req.clinicId);
+    if (res3.error) throw new Error(res3.error.message);
+
+    const res4 = await supabase.from("appointments").delete().eq("clinic_id", req.clinicId);
+    if (res4.error) throw new Error(res4.error.message);
+
+    const res5 = await supabase.from("patients").delete().eq("clinic_id", req.clinicId);
+    if (res5.error) throw new Error(res5.error.message);
 
     return res.json({ success: true, message: "Factory reset complete." });
   } catch (error) {
