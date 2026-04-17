@@ -37,137 +37,179 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-brand-400 rounded-full mix-blend-multiply filter blur-[100px] opacity-20"></div>
-        <div className="absolute top-40 -left-20 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-[80px] opacity-20"></div>
-      </div>
-
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30">
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+    <div className="min-h-screen flex">
+      {/* Left — Form */}
+      <div className="flex-1 flex flex-col justify-center items-center px-8 py-12 bg-surface">
+        <div className="w-full max-w-sm">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5 mb-10">
+            <div
+              className="w-9 h-9 rounded-[0.5rem] flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: "#7FCD4D" }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <rect x="5.5" y="1" width="3" height="12" rx="1.5" fill="#1a3a2e"/>
+                <rect x="1" y="5.5" width="12" height="3" rx="1.5" fill="#1a3a2e"/>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-on-surface tracking-tight uppercase leading-none">PRECISION</p>
+              <p className="text-sm font-extrabold text-on-surface tracking-tight uppercase leading-none">CLINIC</p>
+            </div>
           </div>
-          <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
-            Bytelytic OS
-          </span>
-        </div>
-        <h2 className="mt-2 text-center text-3xl font-bold tracking-tight text-slate-900">
-          Sign in to your clinic
-        </h2>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-[440px]">
-        <div className="bg-white py-10 px-8 shadow-premium rounded-3xl border border-slate-100/50">
-          <form className="space-y-6" onSubmit={handleLogin}>
+          {/* Heading */}
+          <h1 className="text-[1.75rem] font-medium text-on-surface mb-1 tracking-tight">
+            Welcome back
+          </h1>
+          <p className="text-sm text-on-surface-variant mb-8 mt-1">
+            Sign in to your clinic dashboard
+          </p>
+
+          <form className="space-y-5" onSubmit={handleLogin}>
             {error && (
               <div className="bg-rose-50 text-rose-600 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-semibold text-slate-700 mb-1.5"
-              >
-                Email address
+              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest mb-2">
+                Email
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-slate-400" />
-                </div>
+                <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
                 <input
-                  id="email"
-                  name="email"
                   type="email"
                   autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-11 pr-3 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 bg-slate-50 focus:bg-white text-slate-900 text-sm transition-all outline-none"
                   placeholder="doctor@clinic.com"
+                  className="w-full pl-10 pr-4 py-3 bg-surface-container rounded-xl outline-none text-on-surface text-sm
+                    placeholder-on-surface-variant/50 border-b-2 border-transparent focus:border-primary transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-semibold text-slate-700 mb-1.5"
-              >
+              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest mb-2">
                 Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-400" />
-                </div>
+                <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
                 <input
-                  id="password"
-                  name="password"
                   type="password"
                   autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-11 pr-3 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 bg-slate-50 focus:bg-white text-slate-900 text-sm transition-all outline-none"
                   placeholder="••••••••"
+                  className="w-full pl-10 pr-4 py-3 bg-surface-container rounded-xl outline-none text-on-surface text-sm
+                    placeholder-on-surface-variant/50 border-b-2 border-transparent focus:border-primary transition-all"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
-                  id="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300 text-brand-500 focus:ring-brand-500/20"
+                  className="w-4 h-4 rounded accent-primary"
                 />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-slate-600 font-medium"
-                >
+                <span className="text-sm text-on-surface-variant">
                   Remember me
-                </label>
-              </div>
-              <div className="text-sm">
-                <a
-                  href="#"
-                  className="font-semibold text-brand-600 hover:text-brand-500"
-                >
-                  Forgot password?
-                </a>
-              </div>
+                </span>
+              </label>
+              <a
+                href="#"
+                className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                Forgot password?
+              </a>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative flex w-full justify-center items-center py-3.5 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-md shadow-brand-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {loading ? "Signing in..." : "Sign in"}
-                {!loading && (
-                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                )}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="group w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+              style={{ backgroundColor: "#396a00" }}
+            >
+              {loading ? "Signing in..." : "Sign In"}
+              {!loading && (
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              )}
+            </button>
           </form>
         </div>
+      </div>
+
+      {/* Right — Branding panel (hidden on mobile) */}
+      <div
+        className="hidden lg:flex w-[45%] flex-col justify-between p-12 relative overflow-hidden"
+        style={{ backgroundColor: "#1a3a2e" }}
+      >
+        {/* Decorative circles */}
+        <div
+          className="absolute -top-24 -right-24 w-72 h-72 rounded-full opacity-20"
+          style={{ backgroundColor: "#7FCD4D" }}
+        />
+        <div
+          className="absolute bottom-16 -left-16 w-56 h-56 rounded-full opacity-10"
+          style={{ backgroundColor: "#7FCD4D" }}
+        />
+
+        {/* Top logo */}
+        <div className="flex items-center gap-2.5 relative z-10">
+          <div
+            className="w-9 h-9 rounded-[0.5rem] flex items-center justify-center"
+            style={{ backgroundColor: "#7FCD4D" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <rect x="5.5" y="1" width="3" height="12" rx="1.5" fill="#1a3a2e"/>
+              <rect x="1" y="5.5" width="12" height="3" rx="1.5" fill="#1a3a2e"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-white font-extrabold text-sm uppercase leading-none">PRECISION</p>
+            <p className="text-white font-extrabold text-sm uppercase leading-none mt-0.5">CLINIC</p>
+          </div>
+        </div>
+
+        {/* Center copy */}
+        <div className="relative z-10">
+          <h2 className="text-4xl font-light text-white leading-snug mb-4">
+            Your AI Front Desk.
+            <br />
+            <span style={{ color: "#7FCD4D" }}>Always On.</span>
+          </h2>
+          <p className="text-white/60 text-sm leading-relaxed max-w-xs">
+            Automated appointment booking, 24/7 patient calls, and revenue
+            recovery — all handled by AI while you focus on care.
+          </p>
+
+          <div className="mt-8 space-y-3">
+            {[
+              "Answers every call, 24/7",
+              "Books appointments automatically",
+              "Sends reminders & follow-ups",
+            ].map((feat) => (
+              <div key={feat} className="flex items-center gap-3">
+                <div
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: "#7FCD4D" }}
+                />
+                <span className="text-white/70 text-sm">{feat}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom tagline */}
+        <p className="text-white/30 text-xs relative z-10">
+          Bytelytic Clinic OS · bytelytic.com
+        </p>
       </div>
     </div>
   );

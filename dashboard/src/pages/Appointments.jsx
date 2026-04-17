@@ -8,6 +8,8 @@ import {
   AlertCircle,
   RefreshCw,
   CalendarDays,
+  Bot,
+  User,
 } from "lucide-react";
 import api from "../lib/api";
 import {
@@ -20,56 +22,57 @@ import {
   addDays,
 } from "date-fns";
 
-const STATUS_CONFIG = {
-  scheduled: {
-    label: "Scheduled",
-    dot: "bg-amber-400",
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
-  },
-  confirmed: {
-    label: "Confirmed",
-    dot: "bg-emerald-400",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-  },
-  cancelled: {
-    label: "Cancelled",
-    dot: "bg-rose-400",
-    bg: "bg-rose-50",
-    text: "text-rose-700",
-    border: "border-rose-200",
-  },
-  completed: {
-    label: "Completed",
-    dot: "bg-blue-400",
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    border: "border-blue-200",
-  },
-  no_show: {
-    label: "No-Show",
-    dot: "bg-slate-400",
-    bg: "bg-slate-100",
-    text: "text-slate-600",
-    border: "border-slate-200",
-  },
+/* ── Status config ──────────────────────────────────────────── */
+const STATUS_CFG = {
+  scheduled: { label: "SCHEDULED", dotColor: "#006493", textColor: "#006493", bg: "transparent" },
+  confirmed:  { label: "CONFIRMED",  dotColor: "#396a00", textColor: "#396a00", bg: "transparent" },
+  cancelled:  { label: "CANCELLED",  dotColor: "#b71c1c", textColor: "#b71c1c", bg: "transparent" },
+  completed:  { label: "COMPLETED",  dotColor: "#4a148c", textColor: "#4a148c", bg: "transparent" },
+  no_show:    { label: "NO-SHOW",    dotColor: "#6d4c41", textColor: "#6d4c41", bg: "transparent" },
 };
 
 const StatusBadge = ({ status }) => {
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.scheduled;
+  const cfg = STATUS_CFG[status] || STATUS_CFG.scheduled;
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}
-    >
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-      {cfg.label}
-    </span>
+    <div className="flex items-center gap-1.5">
+      <span
+        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+        style={{ backgroundColor: cfg.dotColor }}
+      />
+      <span
+        className="text-[0.6875rem] font-bold tracking-widest"
+        style={{ color: cfg.textColor }}
+      >
+        {cfg.label}
+      </span>
+    </div>
   );
 };
 
+/* ── Tabs (pill segment style) ─────────────────────────────── */
+const TABS = [
+  { key: "today",    label: "Today" },
+  { key: "upcoming", label: "Next 7 Days" },
+  { key: "all",      label: "All" },
+];
+
+/* ── Avatar initials ───────────────────────────────────────── */
+const initials = (name) =>
+  (name || "?")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+/* ── Color from name (deterministic) ──────────────────────── */
+const AVATAR_COLORS = [
+  "#d4e8c1", "#c8d9e8", "#e8d4c1", "#d4c1e8", "#c1e8d4",
+];
+const avatarColor = (name) =>
+  AVATAR_COLORS[(name?.charCodeAt(0) || 0) % AVATAR_COLORS.length];
+
+/* ── Main Component ────────────────────────────────────────── */
 const Appointments = () => {
   const [activeTab, setActiveTab] = useState("today");
   const [appointments, setAppointments] = useState([]);
@@ -81,7 +84,6 @@ const Appointments = () => {
     try {
       const now = new Date();
       let url = "/appointments";
-
       if (tab === "today") {
         url += `?date_from=${startOfDay(now).toISOString()}&date_to=${endOfDay(now).toISOString()}&limit=100`;
       } else if (tab === "upcoming") {
@@ -89,7 +91,6 @@ const Appointments = () => {
       } else {
         url += `?limit=100`;
       }
-
       const res = await api.get(url);
       setAppointments(res.data.data || []);
     } catch (err) {
@@ -108,7 +109,7 @@ const Appointments = () => {
     try {
       await api.put(`/appointments/${apptId}`, { status });
       setAppointments((prev) =>
-        prev.map((a) => (a.id === apptId ? { ...a, status } : a)),
+        prev.map((a) => (a.id === apptId ? { ...a, status } : a))
       );
     } catch (err) {
       console.error("Failed to update status", err);
@@ -117,13 +118,7 @@ const Appointments = () => {
     }
   };
 
-  const getDateLabel = (datetime) => {
-    const d = parseISO(datetime);
-    if (isToday(d)) return "Today";
-    if (isTomorrow(d)) return "Tomorrow";
-    return format(d, "EEEE, MMMM d");
-  };
-
+  /* Group by date */
   const grouped = appointments.reduce((acc, appt) => {
     const key = appt.datetime ? appt.datetime.split("T")[0] : "unknown";
     if (!acc[key]) acc[key] = [];
@@ -131,220 +126,192 @@ const Appointments = () => {
     return acc;
   }, {});
 
-  const tabs = [
-    { key: "today", label: "Today", icon: "📅" },
-    { key: "upcoming", label: "Next 7 Days", icon: "📆" },
-    { key: "all", label: "All", icon: "🗂️" },
-  ];
+  const getDateLabel = (datetime) => {
+    const d = parseISO(datetime);
+    if (isToday(d)) return "Today";
+    if (isTomorrow(d)) return "Tomorrow";
+    return format(d, "EEEE, MMMM d");
+  };
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Header */}
-      <div className="flex justify-between items-end flex-wrap gap-4">
+      {/* ── Header ────────────────────────────────────────────── */}
+      <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-[1.75rem] font-medium text-on-surface tracking-tight">
             Appointments
           </h1>
-          <p className="text-slate-500 mt-1">
-            {appointments.length} appointment
-            {appointments.length !== 1 ? "s" : ""}{" "}
-            {activeTab === "today" ? "today" : "found"}
+          <p className="text-sm text-on-surface-variant mt-1">
+            Manage and track patient scheduling.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => fetchAppointments(activeTab)}
-            className="p-2.5 text-slate-500 hover:text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all"
+            className="btn-ghost"
             title="Refresh"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-sm shadow-brand-500/25 transition-all">
-            <Plus className="w-4 h-4" /> New Appointment
+          <button className="btn-primary">
+            <Plus className="w-4 h-4" />
+            New Appointment
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white p-1.5 rounded-2xl border border-slate-200 inline-flex shadow-sm gap-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-5 py-2 rounded-xl font-medium text-sm transition-all ${
-              activeTab === tab.key
-                ? "bg-slate-900 text-white shadow-sm"
-                : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* ── Tabs (pill/segment style like reference) ─────────── */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="tab-group">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`tab-item ${activeTab === tab.key ? "active" : ""}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Content */}
+      {/* ── Content ──────────────────────────────────────────── */}
       {loading ? (
-        <div className="space-y-4">
+        <div className="card overflow-hidden">
+          <div className="h-12 bg-surface-container" />
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-24 bg-slate-100 rounded-2xl animate-pulse"
-            />
+            <div key={i} className="h-16 border-t border-surface-container animate-pulse" />
           ))}
         </div>
       ) : appointments.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-16 text-center">
-          <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <CalendarDays className="w-8 h-8 text-brand-400" />
+        <div className="card p-16 text-center">
+          <div className="w-14 h-14 bg-surface-container rounded-[0.75rem] flex items-center justify-center mx-auto mb-4">
+            <CalendarDays className="w-7 h-7 text-on-surface-variant/40" />
           </div>
-          <p className="text-slate-800 font-bold text-lg">No appointments</p>
-          <p className="text-slate-400 text-sm mt-1">
-            AI will fill this calendar automatically when patients call
+          <p className="font-semibold text-on-surface">No appointments</p>
+          <p className="text-on-surface-variant text-sm mt-1">
+            AI will fill this calendar when patients call
           </p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {Object.entries(grouped)
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([date, appts]) => (
               <div key={date}>
-                {/* Date divider */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-xl">
-                    <Calendar className="w-3.5 h-3.5 opacity-70" />
-                    <span className="text-sm font-bold">
-                      {appts[0]?.datetime
-                        ? getDateLabel(appts[0].datetime)
-                        : date}
-                    </span>
-                  </div>
-                  <div className="flex-1 h-px bg-slate-200" />
-                  <span className="text-xs text-slate-400 font-medium">
-                    {appts.length} appt{appts.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
+                {/* Date group label */}
+                <p className="overline mb-3">
+                  {appts[0]?.datetime ? getDateLabel(appts[0].datetime) : date}
+                </p>
 
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                {/* Table card */}
+                <div className="card overflow-hidden">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="bg-slate-50/60 border-b border-slate-100">
-                        <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                          Patient
-                        </th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                          Type
-                        </th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                          Time
-                        </th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                          Source
-                        </th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
-                          Actions
-                        </th>
+                      <tr>
+                        <th className="table-header-cell">Patient</th>
+                        <th className="table-header-cell">Time</th>
+                        <th className="table-header-cell">Service</th>
+                        <th className="table-header-cell">Status</th>
+                        <th className="table-header-cell hidden xl:table-cell">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody>
                       {appts.map((apt) => (
-                        <tr
-                          key={apt.id}
-                          className="hover:bg-slate-50/40 transition-colors group"
-                        >
-                          <td className="px-6 py-4">
+                        <tr key={apt.id} className="table-row">
+                          {/* Patient */}
+                          <td className="table-cell">
                             <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-sm">
-                                {apt.patient_name?.charAt(0)?.toUpperCase() ||
-                                  "?"}
+                              <div
+                                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 text-on-surface"
+                                style={{ backgroundColor: avatarColor(apt.patient_name) }}
+                              >
+                                {initials(apt.patient_name)}
                               </div>
                               <div>
-                                <div className="font-semibold text-slate-800 text-sm">
+                                <p className="font-semibold text-sm text-on-surface">
                                   {apt.patient_name}
-                                </div>
-                                <div className="text-xs text-slate-400">
-                                  {apt.patient_phone}
+                                </p>
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  {apt.booked_by === "ai" ? (
+                                    <Bot className="w-3 h-3 text-primary" />
+                                  ) : (
+                                    <User className="w-3 h-3 text-on-surface-variant" />
+                                  )}
+                                  <span className="text-[0.65rem] text-on-surface-variant font-medium">
+                                    {apt.booked_by === "ai" ? "AI Booking" : "Staff"}
+                                  </span>
                                 </div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-sm text-slate-600 font-medium">
+
+                          {/* Time */}
+                          <td className="table-cell">
+                            <p className="font-semibold text-on-surface text-sm">
+                              {apt.datetime
+                                ? format(parseISO(apt.datetime), "hh:mm a")
+                                : "—"}
+                            </p>
+                            <p className="text-xs text-on-surface-variant">
+                              {apt.duration_minutes} min
+                            </p>
+                          </td>
+
+                          {/* Service */}
+                          <td className="table-cell text-sm text-on-surface">
                             {apt.appointment_type}
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-1.5 text-sm text-slate-700 font-medium">
-                              <Clock className="w-3.5 h-3.5 text-slate-400" />
-                              {apt.datetime
-                                ? format(parseISO(apt.datetime), "h:mm a")
-                                : "—"}
-                              <span className="text-slate-400 text-xs font-normal">
-                                ({apt.duration_minutes}m)
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
+
+                          {/* Status */}
+                          <td className="table-cell">
                             <StatusBadge status={apt.status} />
                           </td>
-                          <td className="px-6 py-4">
-                            <span
-                              className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                                apt.booked_by === "ai"
-                                  ? "bg-violet-50 text-violet-600 border border-violet-200"
-                                  : "bg-slate-100 text-slate-500"
-                              }`}
-                            >
-                              {apt.booked_by === "ai" ? "🤖 AI" : "👤 Staff"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-1">
+
+                          {/* Actions */}
+                          <td className="table-cell hidden xl:table-cell">
+                            <div className="flex items-center gap-1.5">
                               {apt.status === "scheduled" && (
                                 <button
-                                  onClick={() =>
-                                    updateStatus(apt.id, "confirmed")
-                                  }
+                                  onClick={() => updateStatus(apt.id, "confirmed")}
                                   disabled={updatingId === apt.id}
-                                  className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-40"
-                                  title="Confirm"
+                                  className="flex items-center gap-1 px-2.5 py-1 text-[0.7rem] font-bold rounded-full transition-colors disabled:opacity-40"
+                                  style={{ backgroundColor: "#edf7e0", color: "#396a00" }}
                                 >
-                                  <CheckCircle className="w-4 h-4" />
+                                  <CheckCircle className="w-3 h-3" />
+                                  Confirm
                                 </button>
                               )}
-                              {(apt.status === "scheduled" ||
-                                apt.status === "confirmed") && (
+                              {(apt.status === "scheduled" || apt.status === "confirmed") && (
                                 <>
                                   <button
-                                    onClick={() =>
-                                      updateStatus(apt.id, "no_show")
-                                    }
+                                    onClick={() => updateStatus(apt.id, "no_show")}
                                     disabled={updatingId === apt.id}
-                                    className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors disabled:opacity-40"
-                                    title="Mark No-Show"
+                                    className="flex items-center gap-1 px-2.5 py-1 text-[0.7rem] font-bold rounded-full transition-colors disabled:opacity-40"
+                                    style={{ backgroundColor: "#fff8e1", color: "#9a6800" }}
                                   >
-                                    <AlertCircle className="w-4 h-4" />
+                                    <AlertCircle className="w-3 h-3" />
+                                    No-Show
                                   </button>
                                   <button
-                                    onClick={() =>
-                                      updateStatus(apt.id, "cancelled")
-                                    }
+                                    onClick={() => updateStatus(apt.id, "cancelled")}
                                     disabled={updatingId === apt.id}
-                                    className="p-1.5 text-rose-400 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-40"
-                                    title="Cancel"
+                                    className="flex items-center gap-1 px-2.5 py-1 text-[0.7rem] font-bold rounded-full transition-colors disabled:opacity-40"
+                                    style={{ backgroundColor: "#fce4ec", color: "#b71c1c" }}
                                   >
-                                    <XCircle className="w-4 h-4" />
+                                    <XCircle className="w-3 h-3" />
+                                    Cancel
                                   </button>
                                 </>
                               )}
                               {apt.status === "confirmed" && (
                                 <button
-                                  onClick={() =>
-                                    updateStatus(apt.id, "completed")
-                                  }
+                                  onClick={() => updateStatus(apt.id, "completed")}
                                   disabled={updatingId === apt.id}
-                                  className="px-3 py-1 text-xs bg-blue-500 text-white hover:bg-blue-600 rounded-lg font-semibold transition-colors disabled:opacity-40"
+                                  className="flex items-center gap-1 px-2.5 py-1 text-[0.7rem] font-bold rounded-full transition-colors disabled:opacity-40"
+                                  style={{ backgroundColor: "#ede7f6", color: "#4a148c" }}
                                 >
+                                  <CheckCircle className="w-3 h-3" />
                                   Complete
                                 </button>
                               )}

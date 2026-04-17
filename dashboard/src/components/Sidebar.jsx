@@ -7,8 +7,9 @@ import {
   Phone,
   Settings,
   LogOut,
+  CalendarPlus,
   X,
-  Zap,
+  Cross,
 } from "lucide-react";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
@@ -30,100 +31,109 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   ];
 
   const clinicInfo = JSON.parse(localStorage.getItem("clinic-info") || "{}");
-  const initials = (clinicInfo.clinicName || "C")
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const clinicName = clinicInfo.clinicName || "Precision Clinic";
 
   return (
     <>
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/60 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       <aside
-        className={`w-64 bg-slate-950 flex flex-col h-screen fixed left-0 top-0 z-50 transition-transform duration-300 ease-in-out ${
-          isOpen
-            ? "translate-x-0 shadow-2xl"
-            : "-translate-x-full lg:translate-x-0"
+        className={`w-[210px] flex flex-col h-screen fixed left-0 top-0 z-50 transition-transform duration-300 ease-in-out sidebar-glass ${
+          isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
         }`}
+        style={{
+          background: "linear-gradient(180deg, #1e4535 0%, #1a3a2e 58%, #122f23 100%)",
+        }}
       >
-        {/* Logo */}
-        <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center shadow-lg shadow-brand-500/40 flex-shrink-0">
-              <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
+        {/* Logo area */}
+        <div className="px-5 pt-6 pb-5">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2.5">
+              {/* Cross / medical icon */}
+              <div
+                className="w-8 h-8 rounded-[0.5rem] flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: "#7FCD4D" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <rect x="5.5" y="1" width="3" height="12" rx="1.5" fill="#1a3a2e"/>
+                  <rect x="1" y="5.5" width="12" height="3" rx="1.5" fill="#1a3a2e"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-extrabold text-sm leading-none tracking-tight uppercase">
+                  PRECISION
+                </p>
+                <p className="text-white font-extrabold text-sm leading-none tracking-tight uppercase">
+                  CLINIC
+                </p>
+              </div>
             </div>
-            <span className="text-xl font-black text-white tracking-tight">
-              Bytelytic
-            </span>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="lg:hidden p-1 text-white/30 hover:text-white/60 rounded transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="lg:hidden p-1.5 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <p className="text-[0.65rem] font-medium mt-2" style={{ color: "rgba(127,205,77,0.6)" }}>
+            Admin Portal
+          </p>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 py-6 px-3 flex flex-col gap-1 overflow-y-auto">
-          <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-3">
-            Main Menu
-          </p>
+        {/* Subtle divider */}
+        <div className="mx-5 h-px" style={{ backgroundColor: "rgba(255,255,255,0.06)" }} />
+
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto hidden-scrollbar">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive =
+              item.path === "/"
+                ? location.pathname === "/"
+                : location.pathname.startsWith(item.path);
             const Icon = item.icon;
             return (
               <NavLink
                 key={item.name}
                 to={item.path}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-150 group ${
-                  isActive
-                    ? "bg-brand-500 text-white shadow-lg shadow-brand-500/30"
-                    : "text-slate-400 hover:bg-slate-800 hover:text-white"
-                }`}
+                className={`nav-item ${isActive ? "active" : ""}`}
               >
-                <Icon
-                  className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-white" : "text-slate-500 group-hover:text-brand-400"} transition-colors`}
-                />
-                <span className="font-medium text-sm">{item.name}</span>
-                {isActive && (
-                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white/60" />
-                )}
+                <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={isActive ? 2.5 : 2} />
+                <span>{item.name}</span>
               </NavLink>
             );
           })}
         </nav>
 
-        {/* User + Logout */}
-        <div className="p-3 border-t border-slate-800 space-y-1">
-          {/* Clinic badge */}
-          <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-slate-900">
-            <div className="w-8 h-8 rounded-lg bg-brand-500/20 border border-brand-500/30 text-brand-300 flex items-center justify-center text-xs font-bold flex-shrink-0">
-              {initials}
-            </div>
-            <div className="min-w-0">
-              <p className="text-white text-sm font-semibold truncate">
-                {clinicInfo.clinicName || "Clinic"}
-              </p>
-              <p className="text-slate-500 text-xs">Clinic Owner</p>
-            </div>
-          </div>
+        {/* Schedule appointment CTA */}
+        <div className="px-3 pb-3">
+          <button
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-[0.625rem] font-bold text-sm transition-all hover:opacity-95 active:scale-[0.98]"
+            style={{ backgroundColor: "#7FCD4D", color: "#1a3a2e" }}
+          >
+            <CalendarPlus className="w-4 h-4" />
+            Schedule Appointment
+          </button>
+        </div>
 
+        {/* Bottom separator */}
+        <div className="mx-5 h-px mb-3" style={{ backgroundColor: "rgba(255,255,255,0.06)" }} />
+
+        {/* Logout row */}
+        <div className="px-3 pb-5">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-3 w-full rounded-xl text-slate-500 hover:bg-rose-500/10 hover:text-rose-400 transition-all group"
+            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-[0.625rem] transition-all hover:bg-rose-500/10"
+            style={{ color: "rgba(255,255,255,0.35)" }}
           >
             <LogOut className="w-4 h-4" />
-            <span className="font-medium text-sm">Sign Out</span>
+            <span className="font-medium text-sm hover:text-rose-400 transition-colors">Sign Out</span>
           </button>
         </div>
       </aside>

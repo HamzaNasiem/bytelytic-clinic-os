@@ -1,7 +1,7 @@
 import React from "react";
-import { Bell, Menu, Search } from "lucide-react";
+import { Bell, HelpCircle, Menu, Search } from "lucide-react";
 
-const Header = ({ onMenuClick }) => {
+const Header = ({ onMenuClick, pageTitle = "Precision Editorial Admin" }) => {
   const clinicInfo = JSON.parse(localStorage.getItem("clinic-info") || "{}");
   const clinicName = clinicInfo.clinicName || "Clinic";
   const initials = clinicName
@@ -12,49 +12,58 @@ const Header = ({ onMenuClick }) => {
     .toUpperCase();
 
   return (
-    <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-10">
-      <div className="flex items-center gap-4">
+    <header
+      className="h-14 bg-surface-container-lowest flex items-center justify-between px-6 sticky top-0 z-20"
+      style={{ boxShadow: "0px 1px 0px rgba(24,28,28,0.06)" }}
+    >
+      {/* Left: hamburger (mobile) + search */}
+      <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="p-2 -ml-1 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl lg:hidden transition-colors"
+          className="p-2 -ml-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg lg:hidden transition-colors"
         >
           <Menu className="w-5 h-5" />
         </button>
 
+        {/* Search bar – hidden on small screens, shown from md */}
         <div className="relative hidden md:block">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
           <input
             type="text"
             placeholder="Search..."
-            className="w-64 pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 rounded-xl outline-none text-sm text-slate-700 placeholder-slate-400 transition-all"
+            className="w-60 pl-8 pr-4 py-2 text-sm outline-none text-on-surface placeholder-on-surface-variant/40 rounded-[0.625rem] transition-all duration-200"
+            style={{
+              backgroundColor: "#edf1ef",
+              border: "none",
+            }}
+            onFocus={(e) => (e.target.style.backgroundColor = "#e5ebe8")}
+            onBlur={(e) => (e.target.style.backgroundColor = "#edf1ef")}
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Live indicator */}
-        <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-semibold">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          AI Live
-        </div>
+      {/* Center: page title (hidden on small screens) */}
+      <span className="hidden lg:block absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-on-surface-variant">
+        {pageTitle}
+      </span>
 
-        <button className="relative p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+      {/* Right: notification, help, avatar */}
+      <div className="flex items-center gap-1.5">
+        <button className="relative p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors">
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-2 border-surface-container-lowest" style={{ backgroundColor: "#7dbd42" }} />
         </button>
 
-        <div className="h-6 w-px bg-slate-200" />
+        <button className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors">
+          <HelpCircle className="w-5 h-5" />
+        </button>
 
-        <div className="flex items-center gap-2.5 cursor-pointer group">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold text-slate-800 group-hover:text-brand-600 transition-colors leading-tight">
-              {clinicName}
-            </p>
-            <p className="text-xs text-slate-400">Clinic Owner</p>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-sm font-bold shadow-sm flex-shrink-0">
-            {initials}
-          </div>
+        {/* Avatar */}
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ml-1 cursor-pointer flex-shrink-0 ring-2 ring-surface-container-low"
+          style={{ backgroundColor: "#396a00" }}
+        >
+          {initials}
         </div>
       </div>
     </header>

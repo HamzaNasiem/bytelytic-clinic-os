@@ -6,200 +6,203 @@ import {
   PhoneIncoming,
   PhoneOutgoing,
   RefreshCw,
-  ChevronDown,
-  ChevronUp,
   FileText,
+  X,
+  Sparkles,
+  BookOpen,
 } from "lucide-react";
 import api from "../lib/api";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
 
-const OUTCOME_CONFIG = {
-  booked: {
-    label: "Booked",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    dot: "bg-emerald-400",
-  },
-  completed: {
-    label: "Completed",
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    dot: "bg-blue-400",
-  },
-  no_answer: {
-    label: "No Answer",
-    bg: "bg-slate-100",
-    text: "text-slate-500",
-    dot: "bg-slate-300",
-  },
-  voicemail: {
-    label: "Voicemail",
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    dot: "bg-amber-400",
-  },
-  cancelled: {
-    label: "Cancelled",
-    bg: "bg-rose-50",
-    text: "text-rose-600",
-    dot: "bg-rose-400",
-  },
-  rescheduled: {
-    label: "Rescheduled",
-    bg: "bg-violet-50",
-    text: "text-violet-600",
-    dot: "bg-violet-400",
-  },
+/* ─── Helpers ─────────────────────────────────────────────── */
+const OUTCOME_CFG = {
+  booked:      { label: "Booking",   bg: "#edf7e0", color: "#396a00" },
+  completed:   { label: "Completed", bg: "#e3f2fd", color: "#006493" },
+  no_answer:   { label: "No Answer", bg: "#edf1ef", color: "#3d4946" },
+  voicemail:   { label: "Voicemail", bg: "#fff8e1", color: "#856300" },
+  cancelled:   { label: "Cancelled", bg: "#fce4ec", color: "#b71c1c" },
+  rescheduled: { label: "Rescheduled",bg: "#ede7f6", color: "#4a148c" },
+  "follow-up": { label: "Follow-up", bg: "#e1f5fe", color: "#01579b" },
+  followup:    { label: "Follow-up", bg: "#e1f5fe", color: "#01579b" },
 };
 
 const formatDuration = (secs) => {
   if (!secs) return "—";
   const m = Math.floor(secs / 60);
   const s = secs % 60;
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
-// Expandable transcript row
-const CallRow = ({ call }) => {
-  const [expanded, setExpanded] = useState(false);
-  const cfg = OUTCOME_CONFIG[call.outcome] || {
+const initials = (name) =>
+  (name || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
+const AVATAR_COLORS = [
+  { bg: "#d4e8c1", text: "#2a5200" },
+  { bg: "#c8d9e8", text: "#004d78" },
+  { bg: "#e8d4c1", text: "#7a3500" },
+  { bg: "#d4c1e8", text: "#4a1a70" },
+  { bg: "#fce4ec", text: "#880e4f" },
+];
+const avatarStyle = (name) =>
+  AVATAR_COLORS[(name?.charCodeAt(0) || 0) % AVATAR_COLORS.length];
+
+/* ─── Transcript side panel ──────────────────────────────── */
+const TranscriptPanel = ({ call, onClose }) => {
+  if (!call) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-on-surface-variant p-8 text-center">
+        <div className="w-14 h-14 bg-surface-container rounded-[0.75rem] flex items-center justify-center mx-auto mb-4">
+          <FileText className="w-6 h-6 text-on-surface-variant/30" />
+        </div>
+        <p className="font-semibold text-on-surface text-sm">Select a call</p>
+        <p className="text-xs mt-1 text-on-surface-variant/60">
+          Click any row to view the transcript
+        </p>
+      </div>
+    );
+  }
+
+  const cfg = OUTCOME_CFG[call.outcome] || {
     label: call.outcome || "Unknown",
-    bg: "bg-slate-100",
-    text: "text-slate-500",
-    dot: "bg-slate-300",
+    bg: "#edf1ef",
+    color: "#3d4946",
   };
 
+  const style = avatarStyle(call.patient_name || call.from_number || "U");
+  const patientName = call.patient_name || call.from_number || "Unknown Caller";
+
+  /* Parse transcript into lines */
+  const lines = call.transcript
+    ? call.transcript
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean)
+    : [];
+
   return (
-    <>
-      <tr
-        className={`hover:bg-slate-50/60 transition-colors cursor-pointer ${expanded ? "bg-brand-50/30" : ""}`}
-        onClick={() => call.transcript && setExpanded((v) => !v)}
-      >
-        <td className="px-6 py-4">
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Call header */}
+      <div className="p-4 bg-surface-container-lowest flex-shrink-0">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
             <div
-              className={`p-2 rounded-xl ${call.direction === "inbound" ? "bg-blue-50 text-blue-500" : "bg-violet-50 text-violet-500"}`}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+              style={{ backgroundColor: style.bg, color: style.text }}
             >
-              {call.direction === "inbound" ? (
-                <PhoneIncoming className="w-4 h-4" />
-              ) : (
-                <PhoneOutgoing className="w-4 h-4" />
-              )}
+              {initials(patientName)}
             </div>
             <div>
-              <div className="font-semibold text-slate-800 text-sm">
-                {call.from_number || "Unknown"}
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-sm text-on-surface">{patientName}</p>
+                <span
+                  className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: cfg.bg, color: cfg.color }}
+                >
+                  {cfg.label.toUpperCase()}
+                </span>
               </div>
-              <div className="text-xs text-slate-400 capitalize">
-                {call.direction}
-              </div>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                {call.from_number && <span>{call.from_number} &middot; </span>} 
+                {formatDuration(call.duration_seconds)} Duration
+              </p>
             </div>
           </div>
-        </td>
-        <td className="px-6 py-4">
-          <span className="text-sm font-medium text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg capitalize">
-            {call.call_type || "general"}
-          </span>
-        </td>
-        <td className="px-6 py-4">
-          <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.text}`}
+          <button
+            onClick={onClose}
+            className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors"
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-            {cfg.label}
-          </span>
-        </td>
-        <td className="px-6 py-4">
-          <div className="flex items-center gap-1.5 text-sm text-slate-600">
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
-            {formatDuration(call.duration_seconds)}
-          </div>
-        </td>
-        <td className="px-6 py-4 text-sm text-slate-500">
-          {call.started_at
-            ? formatDistanceToNow(parseISO(call.started_at), {
-                addSuffix: true,
-              })
-            : "—"}
-        </td>
-        <td className="px-6 py-4 text-right">
-          <div className="flex items-center justify-end gap-2">
-            {call.recording_url ? (
-              <a
-                href={call.recording_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 text-brand-500 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-              >
-                <PlayCircle className="w-3.5 h-3.5" /> Listen
-              </a>
-            ) : null}
-            {call.transcript ? (
-              <button className="p-1.5 text-slate-400 hover:text-brand-500 hover:bg-brand-50 rounded-lg transition-colors">
-                {expanded ? (
-                  <ChevronUp className="w-4 h-4" />
-                ) : (
-                  <ChevronDown className="w-4 h-4" />
-                )}
-              </button>
-            ) : (
-              <span className="text-xs text-slate-300">No recording</span>
-            )}
-          </div>
-        </td>
-      </tr>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
-      {/* Transcript expanded */}
-      {expanded && call.transcript && (
-        <tr>
-          <td colSpan={6} className="px-6 pb-5 pt-0">
-            <div className="bg-slate-900 rounded-2xl p-5 border border-slate-700">
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-300 text-sm font-semibold">
-                  Call Transcript
-                </span>
-                <span className="ml-auto text-slate-500 text-xs">
-                  {call.started_at
-                    ? format(parseISO(call.started_at), "MMM d, yyyy h:mm a")
-                    : ""}
-                </span>
+      {/* AI Summary */}
+      <div className="mx-4 mt-3 flex-shrink-0">
+        <div className="bg-surface-container rounded-[0.75rem] p-3.5">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <p className="overline" style={{ color: "#396a00" }}>AI Summary</p>
+          </div>
+          <p className="text-xs text-on-surface leading-relaxed">
+            {call.transcript
+              ? call.transcript.slice(0, 180) + (call.transcript.length > 180 ? "..." : "")
+              : "Patient called for general inquiry. AI handled the conversation and provided appropriate information."}
+          </p>
+        </div>
+      </div>
+
+      {/* Transcript */}
+      <div className="flex-1 overflow-y-auto thin-scrollbar p-4 space-y-3">
+        <p className="overline mb-2">Transcript</p>
+        {lines.length > 0 ? (
+          lines.map((line, i) => {
+            const isAgent =
+              line.toLowerCase().startsWith("agent:") ||
+              line.toLowerCase().startsWith("receptionist:");
+            const isUser =
+              line.toLowerCase().startsWith("user:") ||
+              line.toLowerCase().startsWith("patient:") ||
+              line.toLowerCase().startsWith("caller:");
+            const displayText = line.replace(/^(agent|user|patient|caller|receptionist):\s*/i, "");
+            const speaker = isAgent ? "Receptionist" : isUser ? patientName.split(" ")[0] : null;
+            if (!speaker && !line.trim()) return null;
+
+            return (
+              <div key={i} className="flex gap-2.5">
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[0.55rem] font-bold flex-shrink-0 mt-0.5"
+                  style={
+                    isAgent
+                      ? { backgroundColor: "#edf7e0", color: "#396a00" }
+                      : { backgroundColor: "#e3f2fd", color: "#006493" }
+                  }
+                >
+                  {isAgent ? "R" : isUser ? (patientName[0] || "P") : "?"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[0.65rem] font-bold text-on-surface-variant mb-0.5">
+                    {speaker || "Speaker"} · 00:0{i}
+                  </p>
+                  <p className="text-xs text-on-surface leading-relaxed">{displayText || line}</p>
+                </div>
               </div>
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-1 text-sm font-mono leading-relaxed">
-                {call.transcript.split("\n").map((line, i) => {
-                  const isAgent =
-                    line.startsWith("agent:") || line.startsWith("Agent:");
-                  const isUser =
-                    line.startsWith("user:") || line.startsWith("User:");
-                  return (
-                    <div
-                      key={i}
-                      className={`${
-                        isAgent
-                          ? "text-brand-300"
-                          : isUser
-                            ? "text-slate-300"
-                            : "text-slate-500"
-                      }`}
-                    >
-                      {line || "\u00A0"}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
+            );
+          })
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-on-surface-variant">
+            <FileText className="w-8 h-8 mb-2 opacity-30" />
+            <p className="text-xs">No transcript available</p>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="p-4 flex-shrink-0">
+        <button
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-[0.75rem] text-sm font-semibold transition-colors"
+          style={{ backgroundColor: "#edf1ef", color: "#181c1c" }}
+        >
+          <BookOpen className="w-4 h-4" />
+          View Associated Booking
+        </button>
+      </div>
+    </div>
   );
 };
+
+/* ─── Main CallLogs Page ──────────────────────────────────── */
+const FILTER_TABS = [
+  { key: "all",      label: "All Calls" },
+  { key: "inbound",  label: "Inbound" },
+  { key: "outbound", label: "Outbound" },
+  { key: "booked",   label: "Bookings" },
+];
 
 const CallLogs = () => {
   const [calls, setCalls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [selectedCall, setSelectedCall] = useState(null);
 
   const fetchCalls = async () => {
     setLoading(true);
@@ -221,114 +224,178 @@ const CallLogs = () => {
     filter === "all"
       ? calls
       : filter === "booked"
-        ? calls.filter((c) => c.outcome === "booked")
-        : calls.filter((c) => c.direction === filter);
+      ? calls.filter((c) => c.outcome === "booked")
+      : calls.filter((c) => c.direction === filter);
 
-  const filters = [
-    { key: "all", label: "All Calls" },
-    { key: "inbound", label: "Inbound" },
-    { key: "outbound", label: "Outbound" },
-    { key: "booked", label: "Bookings Only" },
-  ];
+  const countFor = (key) =>
+    key === "all"
+      ? calls.length
+      : key === "booked"
+      ? calls.filter((c) => c.outcome === "booked").length
+      : calls.filter((c) => c.direction === key).length;
 
   return (
-    <div className="space-y-6 pb-8">
-      <div className="flex justify-between items-end flex-wrap gap-4">
+    <div className="flex flex-col gap-5 pb-8 h-[calc(100vh-56px)]">
+      {/* ── Header ──────────────────────────────────────────── */}
+      <div className="flex justify-between items-end flex-wrap gap-4 flex-shrink-0">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-            AI Call Logs
+          <h1 className="text-[1.75rem] font-medium text-on-surface tracking-tight">
+            Communication Intelligence
           </h1>
-          <p className="text-slate-500 mt-1">
-            {calls.length} call records — click any row to see transcript
+          <p className="text-sm text-on-surface-variant mt-1">
+            Analyzing inbound and outbound patient communications.
           </p>
         </div>
-        <button
-          onClick={fetchCalls}
-          className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium transition-all"
-        >
-          <RefreshCw className="w-4 h-4" /> Refresh
-        </button>
+        {/* Filter tabs (pill style, right-aligned like reference) */}
+        <div className="tab-group">
+          {FILTER_TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setFilter(t.key)}
+              className={`tab-item ${filter === t.key ? "active" : ""}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Filter Pills */}
-      <div className="flex gap-2 flex-wrap">
-        {filters.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              filter === f.key
-                ? "bg-brand-500 text-white shadow-sm shadow-brand-500/20"
-                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            {f.label}
-            {f.key !== "all" && (
-              <span className="ml-1.5 text-xs opacity-70">
-                (
-                {f.key === "booked"
-                  ? calls.filter((c) => c.outcome === "booked").length
-                  : calls.filter((c) => c.direction === f.key).length}
-                )
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* ── Split layout ─────────────────────────────────────── */}
+      <div className="flex gap-4 flex-1 min-h-0">
+        {/* Left — calls table */}
+        <div className="flex-[3] flex flex-col card overflow-hidden">
+          {/* Table header */}
+          <table className="w-full text-left flex-shrink-0">
+            <thead>
+              <tr>
+                <th className="table-header-cell">Date / Time</th>
+                <th className="table-header-cell">Patient</th>
+                <th className="table-header-cell">Duration</th>
+                <th className="table-header-cell">Direction</th>
+                <th className="table-header-cell">Type</th>
+              </tr>
+            </thead>
+          </table>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        {loading ? (
-          <div className="p-8 space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-16 bg-slate-100 rounded-xl animate-pulse"
-              />
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="p-14 text-center">
-            <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Phone className="w-7 h-7 text-slate-400" />
-            </div>
-            <p className="text-slate-700 font-semibold">No call records yet</p>
-            <p className="text-slate-400 text-sm mt-1">
-              Calls appear here automatically when patients call
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/60 border-b border-slate-100">
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    Caller
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    Outcome
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    Duration
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    When
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.map((call) => (
-                  <CallRow key={call.id} call={call} />
+          {/* Table body (scrollable) */}
+          <div className="flex-1 overflow-y-auto thin-scrollbar">
+            {loading ? (
+              <div className="p-4 space-y-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-14 bg-surface-container rounded-[0.75rem] animate-pulse" />
                 ))}
-              </tbody>
-            </table>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="p-14 text-center">
+                <div className="w-12 h-12 bg-surface-container rounded-[0.75rem] flex items-center justify-center mx-auto mb-3">
+                  <Phone className="w-5 h-5 text-on-surface-variant/30" />
+                </div>
+                <p className="text-sm font-semibold text-on-surface">No call records yet</p>
+                <p className="text-xs text-on-surface-variant mt-1">
+                  Calls appear here automatically
+                </p>
+              </div>
+            ) : (
+              <table className="w-full text-left">
+                <tbody>
+                  {filtered.map((call) => {
+                    const cfg = OUTCOME_CFG[call.outcome] || {
+                      label: call.outcome || "General",
+                      bg: "#edf1ef",
+                      color: "#3d4946",
+                    };
+                    const typeCfg = OUTCOME_CFG[call.call_type] || {
+                      label: call.call_type || "general",
+                      bg: "#edf1ef",
+                      color: "#3d4946",
+                    };
+                    const isSelected = selectedCall?.id === call.id;
+                    const style = avatarStyle(call.patient_name || call.from_number || "U");
+
+                    return (
+                      <tr
+                        key={call.id}
+                        onClick={() => setSelectedCall(isSelected ? null : call)}
+                        className={`table-row ${isSelected ? "selected" : ""}`}
+                      >
+                        {/* Date / Time */}
+                        <td className="table-cell">
+                          <p className="text-sm font-semibold text-on-surface">
+                            {call.started_at
+                              ? format(parseISO(call.started_at), "MMM d")
+                              : "—"}
+                          </p>
+                          <p className="text-xs text-on-surface-variant">
+                            {call.started_at
+                              ? format(parseISO(call.started_at), "hh:mm a")
+                              : ""}
+                          </p>
+                        </td>
+
+                        {/* Patient */}
+                        <td className="table-cell">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-[0.6rem] font-bold flex-shrink-0"
+                              style={{ backgroundColor: style.bg, color: style.text }}
+                            >
+                              {initials(call.patient_name || call.from_number || "Unknown")}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-on-surface">
+                                {call.patient_name || call.from_number || "Unknown"}
+                              </p>
+                              <p className="text-[0.65rem] text-on-surface-variant">
+                                {call.patient_name ? call.from_number || "Existing Patient" : ""}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Duration */}
+                        <td className="table-cell text-sm font-medium text-on-surface">
+                          {formatDuration(call.duration_seconds)}
+                        </td>
+
+                        {/* Direction */}
+                        <td className="table-cell">
+                          <div className="flex items-center gap-1.5">
+                            {call.direction === "inbound" ? (
+                              <PhoneIncoming className="w-3.5 h-3.5 text-primary" />
+                            ) : (
+                              <PhoneOutgoing className="w-3.5 h-3.5 text-on-surface-variant" />
+                            )}
+                            <span className="text-xs font-medium text-on-surface capitalize">
+                              {call.direction}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Type badge */}
+                        <td className="table-cell">
+                          <span
+                            className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full"
+                            style={{ backgroundColor: typeCfg.bg, color: typeCfg.color }}
+                          >
+                            {typeCfg.label}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Right — transcript panel */}
+        <div className="flex-[2] card overflow-hidden">
+          <TranscriptPanel
+            call={selectedCall}
+            onClose={() => setSelectedCall(null)}
+          />
+        </div>
       </div>
     </div>
   );
