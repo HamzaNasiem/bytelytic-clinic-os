@@ -261,24 +261,10 @@ const CallLogs = () => {
       </div>
 
       {/* ── Split layout ─────────────────────────────────────── */}
-      <div className="flex gap-4 flex-1 min-h-0">
+      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 pb-10 lg:pb-0 overflow-y-auto lg:overflow-hidden">
         {/* Left — calls table */}
-        <div className="flex-[3] flex flex-col card overflow-hidden">
-          {/* Table header */}
-          <table className="w-full text-left flex-shrink-0">
-            <thead>
-              <tr>
-                <th className="table-header-cell">Date / Time</th>
-                <th className="table-header-cell">Patient</th>
-                <th className="table-header-cell">Duration</th>
-                <th className="table-header-cell">Direction</th>
-                <th className="table-header-cell">Type</th>
-              </tr>
-            </thead>
-          </table>
-
-          {/* Table body (scrollable) */}
-          <div className="flex-1 overflow-y-auto thin-scrollbar">
+        <div className="flex-[3] flex flex-col card overflow-hidden min-h-[400px] lg:min-h-0">
+          <div className="flex-1 overflow-auto thin-scrollbar">
             {loading ? (
               <div className="p-4 space-y-2">
                 {[1, 2, 3, 4].map((i) => (
@@ -296,7 +282,16 @@ const CallLogs = () => {
                 </p>
               </div>
             ) : (
-              <table className="w-full text-left">
+              <table className="w-full text-left min-w-[600px]">
+                <thead className="sticky top-0 z-10 shadow-sm" style={{ backgroundColor: "#fafefb" }}>
+                  <tr>
+                    <th className="table-header-cell">Date / Time</th>
+                    <th className="table-header-cell">Patient</th>
+                    <th className="table-header-cell">Duration</th>
+                    <th className="table-header-cell">Direction</th>
+                    <th className="table-header-cell">Type</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {filtered.map((call) => {
                     const cfg = OUTCOME_CFG[call.outcome] || {

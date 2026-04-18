@@ -357,9 +357,9 @@ const Patients = () => {
       </div>
 
       {/* ── Split layout ─────────────────────────────────────── */}
-      <div className="flex gap-4 flex-1 min-h-0">
+      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 pb-10 lg:pb-0 overflow-y-auto lg:overflow-hidden">
         {/* Left — patient list */}
-        <div className="w-[300px] flex flex-col card overflow-hidden flex-shrink-0">
+        <div className="w-full lg:w-[300px] h-[400px] lg:h-auto flex flex-col card overflow-hidden flex-shrink-0">
           {/* Filter chips */}
           <div className="p-3 flex items-center gap-1.5">
             {["All", "Recent", "Flagged"].map((f) => (
@@ -470,7 +470,7 @@ const Patients = () => {
         </div>
 
         {/* Right — detail panel */}
-        <div className="flex-1 card overflow-hidden">
+        <div className="flex-1 min-h-[500px] lg:min-h-0 card overflow-hidden">
           <PatientDetail
             patient={selectedPatient}
             detail={detail}

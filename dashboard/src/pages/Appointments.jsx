@@ -206,14 +206,15 @@ const Appointments = () => {
 
                 {/* Table card */}
                 <div className="card overflow-hidden">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr>
-                        <th className="table-header-cell">Patient</th>
-                        <th className="table-header-cell">Time</th>
-                        <th className="table-header-cell">Service</th>
-                        <th className="table-header-cell">Status</th>
-                        <th className="table-header-cell hidden xl:table-cell">Actions</th>
+                  <div className="overflow-x-auto w-full">
+                    <table className="w-full text-left min-w-[700px]">
+                      <thead>
+                        <tr>
+                          <th className="table-header-cell">Patient</th>
+                          <th className="table-header-cell">Time</th>
+                          <th className="table-header-cell">Service</th>
+                          <th className="table-header-cell">Status</th>
+                          <th className="table-header-cell">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -321,6 +322,7 @@ const Appointments = () => {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </div>
             ))}
