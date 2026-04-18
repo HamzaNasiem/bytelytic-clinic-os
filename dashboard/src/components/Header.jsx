@@ -68,13 +68,13 @@ const Header = ({ onMenuClick, pageTitle = "Bytelytic Clinic OS" }) => {
       <div className="flex items-center gap-1.5 relative" ref={dropdownRef}>
         
         {/* Notifications */}
-        <div className="relative">
+        <div>
           <button onClick={() => toggleDropdown('notifications')} className="relative p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors">
             <Bell className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-2 border-surface-container-lowest" style={{ backgroundColor: "#7dbd42" }} />
           </button>
           {activeDropdown === 'notifications' && (
-            <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-surface-container z-50 overflow-hidden">
+            <div className="absolute top-full right-0 mt-1 w-72 bg-white rounded-xl shadow-lg border border-surface-container z-50 overflow-hidden">
               <div className="p-3 border-b border-surface-container flex justify-between items-center">
                 <span className="font-bold text-sm text-on-surface">Notifications</span>
               </div>
@@ -95,12 +95,12 @@ const Header = ({ onMenuClick, pageTitle = "Bytelytic Clinic OS" }) => {
         </div>
 
         {/* Help */}
-        <div className="relative">
+        <div>
           <button onClick={() => toggleDropdown('help')} className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors">
             <HelpCircle className="w-5 h-5" />
           </button>
           {activeDropdown === 'help' && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-surface-container z-50 overflow-hidden py-1">
+            <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-surface-container z-50 overflow-hidden py-1">
               <a href="#" className="block px-4 py-2 hover:bg-surface-container text-sm text-on-surface">Documentation</a>
               <a href="#" className="block px-4 py-2 hover:bg-surface-container text-sm text-on-surface">Video Tutorials</a>
               <a href="#" className="block px-4 py-2 hover:bg-surface-container text-sm text-on-surface">Contact Support</a>
@@ -109,7 +109,7 @@ const Header = ({ onMenuClick, pageTitle = "Bytelytic Clinic OS" }) => {
         </div>
 
         {/* Avatar / Profile */}
-        <div className="relative">
+        <div>
           <div
             onClick={() => toggleDropdown('profile')}
             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ml-1 cursor-pointer flex-shrink-0 ring-2 ring-surface-container-low"
@@ -118,7 +118,7 @@ const Header = ({ onMenuClick, pageTitle = "Bytelytic Clinic OS" }) => {
             {initials}
           </div>
           {activeDropdown === 'profile' && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-surface-container z-50 overflow-hidden py-1">
+            <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-surface-container z-50 overflow-hidden py-1">
               <div className="px-4 py-3 border-b border-surface-container mb-1 bg-surface-container-lowest">
                 <p className="text-sm font-bold text-on-surface truncate">{clinicName}</p>
                 <p className="text-xs text-on-surface-variant truncate">admin@bytelytic.com</p>
