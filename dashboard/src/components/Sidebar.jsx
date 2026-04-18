@@ -31,7 +31,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   ];
 
   const clinicInfo = JSON.parse(localStorage.getItem("clinic-info") || "{}");
-  const clinicName = clinicInfo.clinicName || "Precision Clinic";
+  const clinicName = clinicInfo.clinicName || "Bytelytic Clinic OS";
 
   return (
     <>
@@ -67,7 +67,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               </div>
               <div>
                 <p className="text-white font-extrabold text-sm leading-none tracking-tight uppercase">
-                  PRECISION
+                  BYTELYTIC
                 </p>
                 <p className="text-white font-extrabold text-sm leading-none tracking-tight uppercase">
                   CLINIC

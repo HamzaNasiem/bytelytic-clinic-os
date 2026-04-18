@@ -13,7 +13,7 @@ if (import.meta.env.DEV && !localStorage.getItem('sb-token')) {
   localStorage.setItem('sb-token', 'dev-preview-token');
   localStorage.setItem('clinic-info', JSON.stringify({
     clinicId: 'dev-clinic-id',
-    clinicName: 'Precision Clinic',
+    clinicName: 'Bytelytic Clinic OS',
     timezone: 'America/Chicago',
   }));
 }

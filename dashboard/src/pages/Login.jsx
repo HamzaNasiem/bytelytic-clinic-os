@@ -53,7 +53,7 @@ const Login = () => {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-extrabold text-on-surface tracking-tight uppercase leading-none">PRECISION</p>
+              <p className="text-sm font-extrabold text-on-surface tracking-tight uppercase leading-none">BYTELYTIC</p>
               <p className="text-sm font-extrabold text-on-surface tracking-tight uppercase leading-none">CLINIC</p>
             </div>
           </div>
@@ -172,7 +172,7 @@ const Login = () => {
             </svg>
           </div>
           <div>
-            <p className="text-white font-extrabold text-sm uppercase leading-none">PRECISION</p>
+            <p className="text-white font-extrabold text-sm uppercase leading-none">BYTELYTIC</p>
             <p className="text-white font-extrabold text-sm uppercase leading-none mt-0.5">CLINIC</p>
           </div>
         </div>

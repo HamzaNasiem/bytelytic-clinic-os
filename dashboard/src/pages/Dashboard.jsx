@@ -97,7 +97,7 @@ const Dashboard = () => {
   const [chartRange, setChartRange] = useState(7);
   const [chartData, setChartData] = useState([]);
   const [upNext, setUpNext] = useState([]);
-  const [clinicName, setClinicName] = useState("Precision Clinic");
+  const [clinicName, setClinicName] = useState("Bytelytic Clinic");
 
   const fetchTimeline = async (days) => {
     try {
