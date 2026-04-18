@@ -62,37 +62,39 @@ const PatientDetail = ({ patient, detail, loading }) => {
       {/* Top profile section */}
       <div className="p-6 bg-surface-container-lowest">
         {/* Name + avatar + actions */}
-        <div className="flex items-start gap-4 mb-5">
-          <div
-            className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0"
-            style={{ backgroundColor: style.bg, color: style.text }}
-          >
-            {initials(patient.name)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-light text-on-surface tracking-tight">{patient.name}</h2>
-            <div className="flex items-center gap-3 mt-1 flex-wrap">
-              {patient.date_of_birth && (
-                <span className="text-xs text-on-surface-variant">
-                  DOB: {format(parseISO(patient.date_of_birth), "MMM d, yyyy")}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
+          <div className="flex items-start gap-4 flex-1 min-w-0">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0"
+              style={{ backgroundColor: style.bg, color: style.text }}
+            >
+              {initials(patient.name)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-2xl font-light text-on-surface tracking-tight break-words">{patient.name}</h2>
+              <div className="flex items-center gap-3 mt-1 flex-wrap">
+                {patient.date_of_birth && (
+                  <span className="text-xs text-on-surface-variant">
+                    DOB: {format(parseISO(patient.date_of_birth), "MMM d, yyyy")}
+                  </span>
+                )}
+                <span
+                  className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: "#edf7e0", color: "#396a00" }}
+                >
+                  Active Patient
                 </span>
-              )}
-              <span
-                className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full"
-                style={{ backgroundColor: "#edf7e0", color: "#396a00" }}
-              >
-                Active Patient
-              </span>
+              </div>
             </div>
           </div>
           {/* Quick action buttons */}
-          <div className="flex gap-2 flex-shrink-0">
-            <button onClick={() => setShowBookApptModal(true)} className="btn-primary text-xs py-2 px-3">
-              <Calendar className="w-3.5 h-3.5" />
+          <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
+            <button onClick={() => setShowBookApptModal(true)} className="flex-1 sm:flex-none justify-center btn-primary text-xs py-2 px-3">
+              <Calendar className="w-3.5 h-3.5 mr-1" />
               Book Appt
             </button>
-            <button onClick={() => setShowMessageModal(true)} className="btn-secondary text-xs py-2 px-3">
-              <MessageSquare className="w-3.5 h-3.5" />
+            <button onClick={() => setShowMessageModal(true)} className="flex-1 sm:flex-none justify-center btn-secondary text-xs py-2 px-3">
+              <MessageSquare className="w-3.5 h-3.5 mr-1" />
               Message
             </button>
           </div>
