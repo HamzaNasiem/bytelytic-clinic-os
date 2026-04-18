@@ -12,10 +12,7 @@ const Layout = () => {
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
 
       {/* Content area: takes all remaining width */}
-      <div
-        className="flex flex-col flex-1 min-h-screen overflow-hidden"
-        style={{ marginLeft: "210px" }}
-      >
+      <div className="flex flex-col flex-1 min-h-screen overflow-hidden lg:ml-[210px]">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-5 lg:p-7 w-full overflow-y-scroll overflow-x-hidden">
           <Outlet />
