@@ -263,7 +263,7 @@ const CallLogs = () => {
       {/* ── Split layout ─────────────────────────────────────── */}
       <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 pb-10 lg:pb-0 overflow-y-auto lg:overflow-hidden">
         {/* Left — calls table */}
-        <div className="flex-[3] flex flex-col card overflow-hidden min-h-[400px] lg:min-h-0">
+        <div className={`flex-[3] flex-col card overflow-hidden min-h-[400px] lg:min-h-0 ${selectedCall ? 'hidden lg:flex' : 'flex'}`}>
           <div className="flex-1 overflow-auto thin-scrollbar">
             {loading ? (
               <div className="p-4 space-y-2">
@@ -385,7 +385,7 @@ const CallLogs = () => {
         </div>
 
         {/* Right — transcript panel */}
-        <div className="flex-[2] card overflow-hidden">
+        <div className={`flex-[2] flex-col card overflow-hidden min-h-[500px] lg:min-h-0 ${!selectedCall ? 'hidden lg:flex' : 'flex'}`}>
           <TranscriptPanel
             call={selectedCall}
             onClose={() => setSelectedCall(null)}

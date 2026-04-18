@@ -40,7 +40,7 @@ const STATUS_DOT = {
 };
 
 /* ─── Patient Detail Panel ────────────────────────────────── */
-const PatientDetail = ({ patient, detail, loading }) => {
+const PatientDetail = ({ patient, detail, loading, onClose }) => {
   if (!patient) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-on-surface-variant p-8 text-center">
@@ -60,7 +60,13 @@ const PatientDetail = ({ patient, detail, loading }) => {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Top profile section */}
-      <div className="p-6 bg-surface-container-lowest">
+      <div className="p-6 bg-surface-container-lowest relative">
+        <button
+          onClick={onClose}
+          className="lg:hidden absolute top-4 right-4 p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
         {/* Name + avatar + actions */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
           <div className="flex items-start gap-4 flex-1 min-w-0">
@@ -361,7 +367,7 @@ const Patients = () => {
       {/* ── Split layout ─────────────────────────────────────── */}
       <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 pb-10 lg:pb-0 overflow-y-auto lg:overflow-hidden">
         {/* Left — patient list */}
-        <div className="w-full lg:w-[300px] h-[400px] lg:h-auto flex flex-col card overflow-hidden flex-shrink-0">
+        <div className={`w-full lg:w-[300px] h-[400px] lg:h-auto flex-col card overflow-hidden flex-shrink-0 ${selectedPatient ? 'hidden lg:flex' : 'flex'}`}>
           {/* Filter chips */}
           <div className="p-3 flex items-center gap-1.5">
             {["All", "Recent", "Flagged"].map((f) => (
@@ -472,11 +478,12 @@ const Patients = () => {
         </div>
 
         {/* Right — detail panel */}
-        <div className="flex-1 min-h-[500px] lg:min-h-0 card overflow-hidden">
+        <div className={`flex-1 min-h-[500px] lg:min-h-0 card overflow-hidden ${!selectedPatient ? 'hidden lg:flex' : 'flex flex-col'}`}>
           <PatientDetail
             patient={selectedPatient}
             detail={detail}
             loading={detailLoading}
+            onClose={() => setSelectedPatient(null)}
           />
         </div>
       </div>
