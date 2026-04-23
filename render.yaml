@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: bytelytic-clinic-os
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: RETELL_API_KEY
+        sync: false
+      - key: RETELL_WEBHOOK_SECRET
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_DEFAULT_NUMBER
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY_BACKUP
+        sync: false
+      - key: API_BASE_URL
+        sync: false
+      - key: DASHBOARD_URL
+        value: https://dashboard-two-jade-54.vercel.app
+      - key: WEBHOOK_BASE_URL
+        sync: false
