@@ -477,13 +477,26 @@ async function handleCallEvent(event) {
       }
     }
 
-    // ── UPSERT appointment — retell_call_id is unique so second event = no duplicate ──
+    // ── Save patient info to call record NOW (before upsert) so Call Logs always shows name ──
+    await supabase
+      .from("calls")
+      .update({
+        patient_id: patient.id,
+        patient_name: patientName,       // ← saved early so Unknown never shows
+        outcome: "attempted_booking",
+        call_type: "booking",
+      })
+      .eq("retell_call_id", retellCallId)
+      .eq("clinic_id", clinicId);
+
+    // ── UPSERT appointment ── constraint 'appt_retell_call_unique' on retell_call_id
+    // ignoreDuplicates:true = if same call fires twice, silently skip the second one
     const { data: appointment, error: apptErr } = await supabase
       .from("appointments")
       .upsert(
         {
           clinic_id: clinicId,
-          retell_call_id: retellCallId,   // ← unique key for idempotency
+          retell_call_id: retellCallId,
           patient_id: patient.id,
           patient_name: patientName,
           patient_phone: patientPhone,
@@ -495,7 +508,7 @@ async function handleCallEvent(event) {
           booked_by: "ai",
           notes,
         },
-        { onConflict: "retell_call_id", ignoreDuplicates: false }
+        { onConflict: "retell_call_id", ignoreDuplicates: true }
       )
       .select()
       .single();
@@ -503,15 +516,10 @@ async function handleCallEvent(event) {
     if (apptErr)
       throw new Error(`Failed to upsert appointment: ${apptErr.message}`);
 
+    // Update call with appointment id now that appointment exists
     await supabase
       .from("calls")
-      .update({
-        patient_id: patient.id,
-        patient_name: patientName,      // ← Bug 4 fix: name now shows in Call Logs
-        appointment_id: appointment.id,
-        outcome: "booked",
-        call_type: "booking",
-      })
+      .update({ appointment_id: appointment.id, outcome: "booked" })
       .eq("retell_call_id", retellCallId)
       .eq("clinic_id", clinicId);
 
