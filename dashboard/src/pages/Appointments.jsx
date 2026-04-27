@@ -26,6 +26,37 @@ import {
   addDays,
 } from "date-fns";
 
+// Clinic timezone — US Central (adjust if clinic is in different timezone)
+const CLINIC_TZ = "America/Chicago";
+
+/** Format datetime in clinic's timezone so Pakistani admin sees correct US time */
+const fmtClinicTime = (iso) => {
+  if (!iso) return "--:-- --";
+  return new Date(iso).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: CLINIC_TZ,
+  });
+};
+
+/** Format full date in clinic timezone */
+const fmtClinicDate = (iso) => {
+  if (!iso) return "Unknown";
+  return new Date(iso).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    timeZone: CLINIC_TZ,
+  });
+};
+
+/** Group key = clinic-local date string YYYY-MM-DD */
+const clinicDateKey = (iso) => {
+  if (!iso) return "unknown";
+  // Get date string in clinic TZ
+  return new Date(iso).toLocaleDateString("en-CA", { timeZone: CLINIC_TZ }); // en-CA = YYYY-MM-DD format
+};
+
 /* ── Status config ──────────────────────────────────────────── */
 const STATUS_CFG = {
   scheduled: { label: "SCHEDULED", dotColor: "#006493", textColor: "#006493" },
@@ -352,9 +383,9 @@ const Appointments = () => {
     }
   };
 
-  /* Group by date */
+  /* Group by CLINIC-timezone date (not UTC, not browser TZ) */
   const grouped = appointments.reduce((acc, appt) => {
-    const key = appt.datetime ? appt.datetime.split("T")[0] : "unknown";
+    const key = clinicDateKey(appt.datetime);
     if (!acc[key]) acc[key] = [];
     acc[key].push(appt);
     return acc;
@@ -423,8 +454,8 @@ const Appointments = () => {
                   .map(([date, appts]) => (
                     <div key={date}>
                       <p className="overline px-4 pt-4 pb-2">
-                        {appts[0]?.datetime ? getDateLabel(appts[0].datetime) : date}
-                      </p>
+                          {appts[0]?.datetime ? fmtClinicDate(appts[0].datetime) : date}
+                        </p>
                       <table className="w-full text-left min-w-[600px]">
                         <thead>
                           <tr>
@@ -466,12 +497,12 @@ const Appointments = () => {
                                     </div>
                                   </div>
                                 </td>
-                                {/* Time */}
+                                {/* Time — shown in clinic timezone (US Central) */}
                                 <td className="table-cell">
                                   <p className="font-semibold text-on-surface text-sm">
-                                    {apt.datetime ? format(parseISO(apt.datetime), "hh:mm a") : "—"}
+                                    {fmtClinicTime(apt.datetime)}
                                   </p>
-                                  <p className="text-xs text-on-surface-variant">{apt.duration_minutes} min</p>
+                                  <p className="text-xs text-on-surface-variant">{apt.duration_minutes} min · CDT</p>
                                 </td>
                                 {/* Service */}
                                 <td className="table-cell text-sm text-on-surface">{apt.appointment_type}</td>

@@ -71,11 +71,12 @@ router.post("/", (req, res) => {
     `[retell.webhook] event=${eventType} call_id=${callId} status=${callStatus}`,
   );
 
-  // call_analyzed fires after call_ended and has the richest transcript — use it
+  // call_analyzed fires AFTER call_ended with the richest transcript — use it for booking.
+  // call_ended fires first (may have no transcript) — only record the call, no booking.
   if (eventType === "call_analyzed") {
-    handleCallEnded(event);
+    handleCallEnded(event); // full booking processing
   } else if (eventType === "call_ended" || callStatus === "ended") {
-    handleCallEnded(event);
+    handleCallRecordOnly(event); // just upsert the call row, no appointment creation
   } else if (eventType === "call_started" || callStatus === "ongoing") {
     handleCallStarted(event);
   } else {
@@ -98,6 +99,22 @@ async function handleCallStarted(event) {
     }
   } catch (e) {
     console.error("[retell.webhook] handleCallStarted threw:", e.message);
+  }
+}
+
+// Lightweight — just upsert the call record, do NOT process booking
+async function handleCallRecordOnly(event) {
+  try {
+    const result = await voiceSvc.handleCallEvent({
+      ...event,
+      call_status: "ended",
+      _recordOnly: true, // signal to voice.service: skip booking
+    });
+    if (!result.success) {
+      console.error("[retell.webhook] handleCallRecordOnly error:", result.error);
+    }
+  } catch (e) {
+    console.error("[retell.webhook] handleCallRecordOnly threw:", e.message);
   }
 }
 

@@ -357,10 +357,10 @@ async function handleCallEvent(event) {
       .select()
       .single();
 
-    if (callStatus !== "ended" || !transcript) {
+    if (callStatus !== "ended" || !transcript || event._recordOnly) {
       return {
         success: true,
-        data: { callId: callRow?.id, action: "call_recorded_only" },
+        data: { callId: callRow?.id, action: event._recordOnly ? "record_only" : "call_recorded_only" },
       };
     }
 
@@ -404,6 +404,23 @@ async function handleCallEvent(event) {
       return {
         success: true,
         data: { callId: callRow?.id, action: "incomplete_booking", booking },
+      };
+    }
+
+    // ── Idempotency guard: if this call already has an appointment, skip ──
+    const { data: existingCallRow } = await supabase
+      .from("calls")
+      .select("appointment_id")
+      .eq("retell_call_id", retellCallId)
+      .eq("clinic_id", clinicId)
+      .single();
+    if (existingCallRow?.appointment_id) {
+      console.log(
+        `[voice.handleCallEvent] already booked callId=${retellCallId} apptId=${existingCallRow.appointment_id} — skipping duplicate`,
+      );
+      return {
+        success: true,
+        data: { action: "already_booked", appointmentId: existingCallRow.appointment_id },
       };
     }
 
@@ -485,6 +502,7 @@ async function handleCallEvent(event) {
       .from("calls")
       .update({
         patient_id: patient.id,
+        patient_name: patientName,      // ← Bug 4 fix: name now shows in Call Logs
         appointment_id: appointment.id,
         outcome: "booked",
         call_type: "booking",
