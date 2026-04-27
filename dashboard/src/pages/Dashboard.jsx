@@ -18,7 +18,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import api from "../lib/api";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 
 /* ─── Mock chart data ─────────────────────────────────────── */
 /* ─── Removed mock generator, fetching live now ─────────────── */
@@ -58,14 +58,21 @@ const SmallMetricCard = ({ icon: Icon, iconBg, value, label }) => (
 
 /* ─── Up Next appointment row ─────────────────────────────── */
 const STATUS_LABELS = {
-  arrived: { label: "ARRIVED", bg: "#e8f5e9", color: "#396a00" },
+  // Live appointment statuses
+  arrived:    { label: "ARRIVED",    bg: "#e8f5e9", color: "#396a00" },
   in_session: { label: "IN SESSION", bg: "#fce4ec", color: "#c00060" },
-  waiting: { label: "WAITING", bg: "#fff8e1", color: "#856300" },
-  expected: { label: "EXPECTED", bg: "#edf1ef", color: "#3d4946" },
+  waiting:    { label: "WAITING",    bg: "#fff8e1", color: "#856300" },
+  expected:   { label: "EXPECTED",   bg: "#edf1ef", color: "#3d4946" },
+  // Appointment booked statuses
+  scheduled:  { label: "SCHEDULED",  bg: "#e3f2fd", color: "#006493" },
+  confirmed:  { label: "CONFIRMED",  bg: "#edf7e0", color: "#396a00" },
+  cancelled:  { label: "CANCELLED",  bg: "#fce4ec", color: "#b71c1c" },
+  completed:  { label: "COMPLETED",  bg: "#ede7f6", color: "#4a148c" },
+  no_show:    { label: "NO-SHOW",    bg: "#fff3e0", color: "#6d4c41" },
 };
 
-const UpNextRow = ({ time, name, type, status, isHighlighted }) => {
-  const cfg = STATUS_LABELS[status] || STATUS_LABELS.expected;
+const UpNextRow = ({ time, ampm, name, type, status, isHighlighted }) => {
+  const cfg = STATUS_LABELS[status] || STATUS_LABELS.scheduled;
   return (
     <div
       className={`flex items-center gap-3 px-4 py-3 rounded-[0.75rem] transition-colors ${
@@ -74,7 +81,7 @@ const UpNextRow = ({ time, name, type, status, isHighlighted }) => {
     >
       <div className="w-14 flex-shrink-0">
         <p className="text-sm font-bold text-on-surface leading-none">{time}</p>
-        <p className="text-[0.65rem] text-on-surface-variant mt-0.5">AM</p>
+        <p className="text-[0.65rem] text-on-surface-variant mt-0.5">{ampm || "AM"}</p>
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-on-surface truncate">{name}</p>
@@ -125,27 +132,34 @@ const Dashboard = () => {
         
         const [statsRes, apptRes] = await Promise.all([
           api.get("/dashboard/stats"),
-          api.get("/appointments")
+          api.get("/appointments?limit=200")
         ]);
         
         setStats(statsRes.data.data);
         
-        // Up Next processing
-        const allAppts = apptRes.data.data || [];
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const upcoming = allAppts
-          .filter(a => a.datetime && a.datetime.startsWith(todayStr))
-          .sort((a, b) => new Date(a.datetime) - new Date(b.datetime))
-          .map(a => {
+        // ── Up Next: use LOCAL timezone boundaries, not UTC string match ──
+        const now = new Date();
+        const dayStart = startOfDay(now);
+        const dayEnd   = endOfDay(now);
+
+        const upcoming = (apptRes.data.data || [])
+          // Only active statuses — skip cancelled/completed/no_show
+          .filter(a => !['cancelled', 'completed', 'no_show'].includes(a.status))
+          // Only TODAY in local timezone
+          .filter(a => {
+            if (!a.datetime) return false;
             const dt = new Date(a.datetime);
-            return {
-              id: a.id,
-              time: format(dt, "hh:mm"),
-              name: a.patient_name || "Unknown",
-              type: "Appointment",
-              status: a.status || "expected"
-            };
-          });
+            return dt >= dayStart && dt <= dayEnd;
+          })
+          .sort((a, b) => new Date(a.datetime) - new Date(b.datetime))
+          .map(a => ({
+            id: a.id,
+            time: format(new Date(a.datetime), "hh:mm"),
+            ampm: format(new Date(a.datetime), "a"),
+            name: a.patient_name || "Unknown",
+            type: a.appointment_type || "Appointment",
+            status: a.status || "scheduled"
+          }));
         setUpNext(upcoming);
         
       } catch (err) {
@@ -157,6 +171,18 @@ const Dashboard = () => {
     
     fetchDashboard();
     fetchTimeline(chartRange);
+
+    // ── Auto-refresh every 60s so status changes appear without reload ──
+    const interval = setInterval(fetchDashboard, 60_000);
+
+    // ── Also refresh whenever user navigates back to this tab ──
+    const onFocus = () => fetchDashboard();
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   const handleRangeChange = (d) => {
@@ -383,15 +409,17 @@ const Dashboard = () => {
               <UpNextRow
                 key={item.id || i}
                 time={item.time}
+                ampm={item.ampm}
                 name={item.name}
                 type={item.type}
                 status={item.status}
-                isHighlighted={item.status === 'in_session'}
+                isHighlighted={item.status === 'in_session' || item.status === 'confirmed'}
               />
             )) : (
               <div className="flex flex-col items-center justify-center p-6 text-center text-on-surface-variant">
                 <Calendar className="w-6 h-6 mb-2 opacity-30" />
-                <p className="text-xs">No upcoming appointments today</p>
+                <p className="text-xs font-semibold text-on-surface">All clear today</p>
+                <p className="text-[0.65rem] mt-0.5 text-on-surface-variant">No scheduled appointments remaining</p>
               </div>
             )}
           </div>
