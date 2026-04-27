@@ -2,6 +2,7 @@
 
 const express = require("express");
 const { supabase } = require("../../db/client");
+const recallSvc = require("../../services/recall.service");
 
 const router = express.Router();
 
@@ -32,6 +33,28 @@ router.get("/", async (req, res, next) => {
     if (error) return res.status(400).json({ error: error.message });
 
     return res.json({ data, meta: { page, limit, total: count } });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /patients/recall-candidates — list patients eligible for recall
+router.get("/recall-candidates", async (req, res, next) => {
+  try {
+    const result = await recallSvc.getRecallCandidates(req.clinicId);
+    if (!result.success) return res.status(400).json({ error: result.error });
+    return res.json({ data: result.data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /patients/recall/:id — trigger manual recall outbound call
+router.post("/recall/:id", async (req, res, next) => {
+  try {
+    const result = await recallSvc.initiateRecall(req.clinicId, req.params.id);
+    if (!result.success) return res.status(400).json({ error: result.error });
+    return res.json({ data: result.data });
   } catch (error) {
     next(error);
   }

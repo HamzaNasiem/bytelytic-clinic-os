@@ -156,6 +156,26 @@ router.put("/:id", async (req, res, next) => {
     if (error || !data)
       return res.status(404).json({ error: "Appointment not found" });
 
+    // Update patient's last_visit_date and total_visits if marked completed
+    if (updates.status === "completed" && data.patient_id) {
+      // Get current total_visits
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("total_visits")
+        .eq("id", data.patient_id)
+        .single();
+        
+      const visitDate = new Date(data.datetime).toISOString().split("T")[0];
+      await supabase
+        .from("patients")
+        .update({ 
+          last_visit_date: visitDate,
+          total_visits: (patient?.total_visits || 0) + 1 
+        })
+        .eq("id", data.patient_id)
+        .eq("clinic_id", req.clinicId);
+    }
+
     return res.json({ data });
   } catch (error) {
     next(error);

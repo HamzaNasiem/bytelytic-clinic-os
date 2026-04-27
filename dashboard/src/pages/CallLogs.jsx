@@ -232,19 +232,19 @@ const CallLogs = () => {
     fetchCalls();
   }, []);
 
-  const filtered =
-    filter === "all"
-      ? calls
-      : filter === "booked"
-      ? calls.filter((c) => c.outcome === "booked")
-      : calls.filter((c) => c.direction === filter);
+  const filtered = calls.filter((c) => {
+    if (filter === "inbound") return c.direction === "inbound";
+    if (filter === "outbound") return c.direction === "outbound";
+    if (filter === "booked") return c.call_type === "booking";
+    return true;
+  });
 
-  const countFor = (key) =>
-    key === "all"
-      ? calls.length
-      : key === "booked"
-      ? calls.filter((c) => c.outcome === "booked").length
-      : calls.filter((c) => c.direction === key).length;
+  const countFor = (key) => {
+    if (key === "inbound") return calls.filter((c) => c.direction === "inbound").length;
+    if (key === "outbound") return calls.filter((c) => c.direction === "outbound").length;
+    if (key === "booked") return calls.filter((c) => c.call_type === "booking").length;
+    return calls.length;
+  };
 
   return (
     <div className="flex flex-col gap-5 pb-8 h-[calc(100vh-56px)]">

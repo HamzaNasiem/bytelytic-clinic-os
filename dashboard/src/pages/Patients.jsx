@@ -94,7 +94,24 @@ const PatientDetail = ({ patient, detail, loading, onClose }) => {
             </div>
           </div>
           {/* Quick action buttons */}
-          <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
+          <div className="flex gap-2 flex-wrap flex-shrink-0 w-full sm:w-auto">
+            {activeFilter === "Recall" && (
+              <button 
+                onClick={async () => {
+                  try {
+                    await api.post(`/patients/recall/${patient.id}`);
+                    alert("Recall call initiated! Check Retell or Call Logs shortly.");
+                  } catch (e) {
+                    alert("Failed to initiate recall: " + (e.response?.data?.error || e.message));
+                  }
+                }}
+                className="flex-1 sm:flex-none justify-center btn-primary text-xs py-2 px-3"
+                style={{ backgroundColor: "#396a00" }}
+              >
+                <Phone className="w-3.5 h-3.5 mr-1" />
+                Start Recall
+              </button>
+            )}
             <button onClick={() => { setShowBookApptModal(true); setBookForm({ appointment_type: 'Initial Evaluation', date: '', time: '', duration_minutes: 60 }); setBookError(''); }} className="flex-1 sm:flex-none justify-center btn-primary text-xs py-2 px-3">
               <Calendar className="w-3.5 h-3.5 mr-1" />
               Book Appt
@@ -340,14 +357,20 @@ const Patients = () => {
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState('');
 
-  const fetchPatients = useCallback(async (searchTerm = "", page = 1) => {
+  const fetchPatients = useCallback(async (searchTerm = "", page = 1, filterType = "All") => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page, limit: 50 });
-      if (searchTerm) params.set("search", searchTerm);
-      const res = await api.get(`/patients?${params}`);
-      setPatients(res.data.data || []);
-      setMeta(res.data.meta || { total: 0, page: 1 });
+      if (filterType === "Recall") {
+        const res = await api.get('/patients/recall-candidates');
+        setPatients(res.data.data || []);
+        setMeta({ total: res.data.data?.length || 0, page: 1 });
+      } else {
+        const params = new URLSearchParams({ page, limit: 50 });
+        if (searchTerm) params.set("search", searchTerm);
+        const res = await api.get(`/patients?${params}`);
+        setPatients(res.data.data || []);
+        setMeta(res.data.meta || { total: 0, page: 1 });
+      }
     } catch (err) {
       console.error("Failed to fetch patients", err);
     } finally {
@@ -356,8 +379,8 @@ const Patients = () => {
   }, []);
 
   useEffect(() => {
-    fetchPatients(search);
-  }, [search]);
+    fetchPatients(search, 1, activeFilter);
+  }, [search, activeFilter]);
 
   const selectPatient = async (p) => {
     setSelectedPatient(p);
@@ -396,12 +419,12 @@ const Patients = () => {
         {/* Left — patient list */}
         <div className={`w-full lg:w-[300px] h-[400px] lg:h-auto flex-col card overflow-hidden flex-shrink-0 ${selectedPatient ? 'hidden lg:flex' : 'flex'}`}>
           {/* Filter chips */}
-          <div className="p-3 flex items-center gap-1.5">
-            {["All", "Recent", "Flagged"].map((f) => (
+          <div className="p-3 flex items-center gap-1.5 overflow-x-auto thin-scrollbar">
+            {["All", "Recent", "Flagged", "Recall"].map((f) => (
               <button
                 key={f}
                 onClick={() => setActiveFilter(f)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-bold transition-all ${
                   activeFilter === f
                     ? "text-white"
                     : "bg-surface-container text-on-surface-variant hover:text-on-surface"
