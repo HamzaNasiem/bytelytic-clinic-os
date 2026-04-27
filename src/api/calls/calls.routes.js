@@ -9,22 +9,23 @@ const router = express.Router();
 router.get("/", async (req, res, next) => {
   try {
     const limit = Math.min(200, parseInt(req.query.limit) || 50);
-    const { direction, outcome, patient_id, from_number } = req.query;
+    const { direction, outcome, patient_id, from_number, appointment_id } = req.query;
 
     let query = supabase
       .from("calls")
       .select(
-        "id, direction, call_type, from_number, to_number, patient_id, patient_name, duration_seconds, outcome, status, transcript, recording_url, started_at, ended_at, created_at",
+        "id, direction, call_type, from_number, to_number, patient_id, patient_name, duration_seconds, outcome, status, transcript, recording_url, started_at, ended_at, appointment_id, created_at",
         { count: "exact" }
       )
       .eq("clinic_id", req.clinicId)
       .order("created_at", { ascending: false })
       .limit(limit);
 
-    if (direction)   query = query.eq("direction", direction);
-    if (outcome)     query = query.eq("outcome", outcome);
-    if (patient_id)  query = query.eq("patient_id", patient_id);
-    if (from_number) query = query.eq("from_number", from_number);
+    if (direction)      query = query.eq("direction", direction);
+    if (outcome)        query = query.eq("outcome", outcome);
+    if (patient_id)     query = query.eq("patient_id", patient_id);
+    if (from_number)    query = query.eq("from_number", from_number);
+    if (appointment_id) query = query.eq("appointment_id", appointment_id);
 
     const { data, error, count } = await query;
     if (error) return res.status(400).json({ error: error.message });

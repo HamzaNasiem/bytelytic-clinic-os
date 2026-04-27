@@ -371,10 +371,17 @@ const Appointments = () => {
     setApptCall(null);
     setCallLoading(true);
     try {
-      // Fetch most recent call by this patient phone
-      const res = await api.get(`/calls?from_number=${encodeURIComponent(apt.patient_phone)}&limit=5`);
+      // Fetch call by appointment_id (not from_number — Retell test uses a different number)
+      const res = await api.get(`/calls?appointment_id=${apt.id}&limit=1`);
       const calls = res.data.data || [];
-      setApptCall(calls[0] || null); // show most recent call
+      // Fallback: if no call linked by appointment_id, try patient phone
+      if (calls.length === 0 && apt.patient_phone) {
+        const res2 = await api.get(`/calls?from_number=${encodeURIComponent(apt.patient_phone)}&limit=5`);
+        const calls2 = res2.data.data || [];
+        setApptCall(calls2[0] || null);
+      } else {
+        setApptCall(calls[0] || null);
+      }
     } catch (err) {
       console.error("Failed to fetch call transcript", err);
       setApptCall(null);
