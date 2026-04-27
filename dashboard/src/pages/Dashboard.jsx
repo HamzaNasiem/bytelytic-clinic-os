@@ -218,8 +218,14 @@ const Dashboard = () => {
                 ${recovered.toLocaleString()}
               </p>
               <div className="flex items-center gap-1.5 mt-3">
-                <TrendingUp className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-semibold text-primary">+12% vs last month</span>
+                {recovered > 0 ? (
+                  <>
+                    <TrendingUp className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-xs font-semibold text-primary">+{aiAppts} AI bookings this month</span>
+                  </>
+                ) : (
+                  <span className="text-xs text-on-surface-variant">Awaiting first AI booking ($150 each)</span>
+                )}
               </div>
             </>
           )}

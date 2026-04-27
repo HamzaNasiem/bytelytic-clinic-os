@@ -95,18 +95,18 @@ const PatientDetail = ({ patient, detail, loading, onClose }) => {
           </div>
           {/* Quick action buttons */}
           <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
-            <button onClick={() => setShowBookApptModal(true)} className="flex-1 sm:flex-none justify-center btn-primary text-xs py-2 px-3">
+            <button onClick={() => { setShowBookApptModal(true); setBookForm({ appointment_type: 'Initial Evaluation', date: '', time: '', duration_minutes: 60 }); setBookError(''); }} className="flex-1 sm:flex-none justify-center btn-primary text-xs py-2 px-3">
               <Calendar className="w-3.5 h-3.5 mr-1" />
               Book Appt
             </button>
-            <button onClick={() => setShowMessageModal(true)} className="flex-1 sm:flex-none justify-center btn-secondary text-xs py-2 px-3">
+            <button onClick={() => { setShowMessageModal(true); setMsgText(''); setMsgError(''); }} className="flex-1 sm:flex-none justify-center btn-secondary text-xs py-2 px-3">
               <MessageSquare className="w-3.5 h-3.5 mr-1" />
               Message
             </button>
           </div>
         </div>
 
-        {/* Contact info */}
+        {/* Contact + Insurance info */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-surface-container rounded-[0.75rem] p-3">
             <p className="overline mb-1">Mobile</p>
@@ -119,6 +119,17 @@ const PatientDetail = ({ patient, detail, loading, onClose }) => {
             <div className="bg-surface-container rounded-[0.75rem] p-3">
               <p className="overline mb-1">Email</p>
               <p className="text-sm font-semibold text-on-surface truncate">{patient.email}</p>
+            </div>
+          )}
+          {(patient.insurance_provider || detail?.patient?.insurance_provider) && (
+            <div className="bg-surface-container rounded-[0.75rem] p-3">
+              <p className="overline mb-1">Insurance</p>
+              <p className="text-sm font-semibold text-on-surface truncate">
+                {detail?.patient?.insurance_provider || patient.insurance_provider}
+              </p>
+              {detail?.patient?.insurance_member_id && (
+                <p className="text-xs text-on-surface-variant mt-0.5">ID: {detail.patient.insurance_member_id}</p>
+              )}
             </div>
           )}
         </div>
@@ -313,6 +324,22 @@ const Patients = () => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showChartModal, setShowChartModal] = useState(false);
 
+  // Book Appointment form
+  const [bookForm, setBookForm] = useState({ appointment_type: 'Initial Evaluation', date: '', time: '', duration_minutes: 60 });
+  const [bookSaving, setBookSaving] = useState(false);
+  const [bookError, setBookError] = useState('');
+
+  // Message form
+  const [msgText, setMsgText] = useState('');
+  const [msgSending, setMsgSending] = useState(false);
+  const [msgError, setMsgError] = useState('');
+  const [msgSent, setMsgSent] = useState(false);
+
+  // Add Patient form
+  const [addForm, setAddForm] = useState({ name: '', phone: '', email: '', date_of_birth: '', insurance_provider: '' });
+  const [addSaving, setAddSaving] = useState(false);
+  const [addError, setAddError] = useState('');
+
   const fetchPatients = useCallback(async (searchTerm = "", page = 1) => {
     setLoading(true);
     try {
@@ -498,36 +525,52 @@ const Patients = () => {
             <p className="text-xs text-on-surface-variant mb-5">Enter patient details to create their profile.</p>
             <div className="space-y-4">
               <div>
-                <label className="overline mb-1 block">Full Name</label>
-                <input type="text" className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none" placeholder="e.g. Michael Scott" />
+                <label className="overline mb-1 block">Full Name *</label>
+                <input type="text" className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none text-on-surface" placeholder="e.g. John Smith" value={addForm.name} onChange={e => setAddForm(f=>({...f,name:e.target.value}))} />
               </div>
               <div>
-                <label className="overline mb-1 block">Phone Number</label>
-                <input type="text" className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none" placeholder="+1 (555) 000-0000" />
+                <label className="overline mb-1 block">Phone Number *</label>
+                <input type="text" className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none text-on-surface" placeholder="+1 (555) 000-0000" value={addForm.phone} onChange={e => setAddForm(f=>({...f,phone:e.target.value}))} />
               </div>
               <div>
                 <label className="overline mb-1 block">Email (optional)</label>
-                <input type="email" className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none" placeholder="michael@example.com" />
+                <input type="email" className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none text-on-surface" placeholder="john@example.com" value={addForm.email} onChange={e => setAddForm(f=>({...f,email:e.target.value}))} />
+              </div>
+              <div>
+                <label className="overline mb-1 block">Insurance Provider (optional)</label>
+                <input type="text" className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none text-on-surface" placeholder="e.g. Blue Cross" value={addForm.insurance_provider} onChange={e => setAddForm(f=>({...f,insurance_provider:e.target.value}))} />
               </div>
             </div>
+            {addError && <p className="text-xs text-red-600 mt-3">{addError}</p>}
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowAddPatientModal(false)} className="px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container rounded-lg transition-colors">Cancel</button>
-              <button onClick={() => setShowAddPatientModal(false)} className="btn-primary text-sm px-5 py-2">Save Patient</button>
+              <button disabled={addSaving} onClick={async () => {
+                setAddError('');
+                if (!addForm.name || !addForm.phone) { setAddError('Name and phone are required.'); return; }
+                setAddSaving(true);
+                try {
+                  await api.post('/patients', addForm);
+                  fetchPatients();
+                  setShowAddPatientModal(false);
+                  setAddForm({ name:'', phone:'', email:'', date_of_birth:'', insurance_provider:'' });
+                } catch(err) { setAddError(err.response?.data?.error || 'Failed to save patient.'); }
+                finally { setAddSaving(false); }
+              }} className="btn-primary text-sm px-5 py-2 disabled:opacity-50">{addSaving ? 'Saving...' : 'Save Patient'}</button>
             </div>
           </div>
         </div>
       )}
 
       {/* 2. Book Appointment Modal */}
-      {showBookApptModal && (
+      {showBookApptModal && selectedPatient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="card w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
             <h2 className="text-lg font-bold text-on-surface mb-1">Book Appointment</h2>
-            <p className="text-xs text-on-surface-variant mb-5">Schedule a visit for {detail?.name || "the patient"}.</p>
+            <p className="text-xs text-on-surface-variant mb-5">Schedule a visit for <strong>{selectedPatient.name}</strong>.</p>
             <div className="space-y-4">
               <div>
                 <label className="overline mb-1 block">Service Type</label>
-                <select className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none border-r-8 border-transparent">
+                <select className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none border-r-8 border-transparent text-on-surface" value={bookForm.appointment_type} onChange={e=>setBookForm(f=>({...f,appointment_type:e.target.value}))}>
                   <option>Initial Evaluation</option>
                   <option>Follow-up</option>
                   <option>Routine Checkup</option>
@@ -536,91 +579,156 @@ const Patients = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="overline mb-1 block">Date</label>
-                  <input type="date" className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none text-on-surface-variant" />
+                  <label className="overline mb-1 block">Date *</label>
+                  <input type="date" className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none text-on-surface" value={bookForm.date} onChange={e=>setBookForm(f=>({...f,date:e.target.value}))} />
                 </div>
                 <div>
-                  <label className="overline mb-1 block">Time</label>
-                  <input type="time" className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none text-on-surface-variant" />
+                  <label className="overline mb-1 block">Time *</label>
+                  <input type="time" className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none text-on-surface" value={bookForm.time} onChange={e=>setBookForm(f=>({...f,time:e.target.value}))} />
                 </div>
               </div>
+              <div>
+                <label className="overline mb-1 block">Duration</label>
+                <select className="w-full bg-surface-container rounded-lg px-3 py-2 text-sm outline-none border-r-8 border-transparent text-on-surface" value={bookForm.duration_minutes} onChange={e=>setBookForm(f=>({...f,duration_minutes:e.target.value}))}>
+                  <option value={30}>30 min</option>
+                  <option value={60}>60 min</option>
+                  <option value={90}>90 min</option>
+                </select>
+              </div>
             </div>
+            {bookError && <p className="text-xs text-red-600 mt-3">{bookError}</p>}
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowBookApptModal(false)} className="px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container rounded-lg transition-colors">Cancel</button>
-              <button onClick={() => setShowBookApptModal(false)} className="btn-primary text-sm px-5 py-2">Confirm Booking</button>
+              <button disabled={bookSaving} onClick={async () => {
+                setBookError('');
+                if (!bookForm.date || !bookForm.time) { setBookError('Date and time are required.'); return; }
+                setBookSaving(true);
+                try {
+                  const datetime = new Date(`${bookForm.date}T${bookForm.time}:00`).toISOString();
+                  await api.post('/appointments', {
+                    patient_name: selectedPatient.name,
+                    patient_phone: selectedPatient.phone,
+                    appointment_type: bookForm.appointment_type,
+                    datetime,
+                    duration_minutes: Number(bookForm.duration_minutes),
+                  });
+                  setShowBookApptModal(false);
+                } catch(err) { setBookError(err.response?.data?.error || 'Failed to book appointment.'); }
+                finally { setBookSaving(false); }
+              }} className="btn-primary text-sm px-5 py-2 disabled:opacity-50">{bookSaving ? 'Booking...' : 'Confirm Booking'}</button>
             </div>
           </div>
         </div>
       )}
 
       {/* 3. Message Modal */}
-      {showMessageModal && (
+      {showMessageModal && selectedPatient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-lg p-6 flex flex-col h-[500px] animate-in fade-in zoom-in-95 duration-200">
+          <div className="card w-full max-w-lg p-6 flex flex-col" style={{maxHeight:'90vh'}}>
             <div className="flex items-center justify-between border-b border-surface-container pb-4 mb-4">
               <div>
-                <h2 className="text-lg font-bold text-on-surface">Message Thread</h2>
-                <p className="text-xs text-on-surface-variant">Conversation with {detail?.name}</p>
+                <h2 className="text-lg font-bold text-on-surface">Send SMS</h2>
+                <p className="text-xs text-on-surface-variant">To: {selectedPatient.name} · {selectedPatient.phone}</p>
               </div>
               <button onClick={() => setShowMessageModal(false)} className="p-2 text-on-surface-variant hover:bg-surface-container rounded-full">
-                <span className="sr-only">Close</span>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 1L1 13M1 1L13 13"/></svg>
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex-1 bg-surface-container-lowest rounded-lg p-4 overflow-y-auto mb-4 border border-surface-container space-y-4">
-              <div className="bg-surface-container p-3 rounded-lg w-[85%] rounded-tl-sm text-sm text-on-surface">
-                Hi {detail?.name}, your appointment is confirmed for tomorrow.
-              </div>
-              <div className="bg-[#edf7e0] p-3 rounded-lg w-[85%] ml-auto rounded-tr-sm text-sm text-[#396a00]">
-                Thank you! I will be there.
-              </div>
+            {/* SMS history */}
+            <div className="flex-1 bg-surface-container-lowest rounded-lg p-4 overflow-y-auto mb-4 border border-surface-container space-y-3 min-h-[160px]">
+              {(detail?.smsMessages || []).length === 0 ? (
+                <p className="text-xs text-on-surface-variant text-center py-4">No messages yet</p>
+              ) : (
+                (detail?.smsMessages || []).slice().reverse().map(sms => (
+                  <div key={sms.id} className={`p-3 rounded-lg text-sm max-w-[85%] ${sms.direction==='inbound' ? 'bg-surface-container text-on-surface rounded-tl-sm' : 'bg-[#edf7e0] text-[#396a00] rounded-tr-sm ml-auto'}`}>
+                    <p>{sms.body}</p>
+                    <p className="text-[0.6rem] opacity-60 mt-1">{sms.direction === 'inbound' ? '← Patient' : '→ AI/Staff'}</p>
+                  </div>
+                ))
+              )}
             </div>
+            {msgSent && <p className="text-xs text-green-700 mb-2">✅ Message sent successfully!</p>}
+            {msgError && <p className="text-xs text-red-600 mb-2">{msgError}</p>}
             <div className="flex gap-2">
-              <input type="text" className="flex-1 bg-surface-container rounded-full px-4 py-2 text-sm outline-none" placeholder="Type a message..." />
-              <button className="bg-primary hover:opacity-90 w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              <input
+                type="text"
+                className="flex-1 bg-surface-container rounded-full px-4 py-2 text-sm outline-none text-on-surface"
+                placeholder="Type a message..."
+                value={msgText}
+                onChange={e => { setMsgText(e.target.value); setMsgSent(false); }}
+                onKeyDown={async e => { if (e.key === 'Enter' && msgText.trim()) { /* trigger send */ } }}
+              />
+              <button
+                disabled={msgSending || !msgText.trim()}
+                className="bg-primary hover:opacity-90 w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0 disabled:opacity-40"
+                onClick={async () => {
+                  if (!msgText.trim()) return;
+                  setMsgSending(true); setMsgError(''); setMsgSent(false);
+                  try {
+                    await api.post(`/patients/${selectedPatient.id}/message`, { message: msgText.trim() });
+                    setMsgText('');
+                    setMsgSent(true);
+                    // Refresh detail to show new SMS
+                    const res = await api.get(`/patients/${selectedPatient.id}`);
+                    setDetail(res.data.data);
+                  } catch(err) { setMsgError(err.response?.data?.error || 'Failed to send.'); }
+                  finally { setMsgSending(false); }
+                }}
+              >
+                {msgSending
+                  ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                }
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 4. Chart Modal */}
-      {showChartModal && (
+      {/* 4. Chart Modal — uses real detail data */}
+      {showChartModal && selectedPatient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="card w-full max-w-3xl p-6 h-[80vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-surface-container pb-4 mb-4">
-              <h2 className="text-lg font-bold text-on-surface">Full Clinical Chart - {detail?.name}</h2>
+              <h2 className="text-lg font-bold text-on-surface">Full Clinical Chart — {selectedPatient.name}</h2>
               <button onClick={() => setShowChartModal(false)} className="p-2 text-on-surface-variant hover:bg-surface-container rounded-full">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 1L1 13M1 1L13 13"/></svg>
+                <X className="w-4 h-4" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+              {/* Demographics */}
               <div>
                 <h3 className="font-bold text-on-surface mb-2">Patient Demographics</h3>
                 <div className="bg-surface-container p-4 rounded-lg text-sm grid grid-cols-2 gap-4">
-                  <div><span className="text-on-surface-variant block mb-1">Phone</span>+923172532350</div>
-                  <div><span className="text-on-surface-variant block mb-1">Status</span>Active</div>
-                  <div><span className="text-on-surface-variant block mb-1">Date of Birth</span>12/04/1990</div>
+                  <div><span className="text-on-surface-variant block mb-1">Phone</span><span className="font-medium">{selectedPatient.phone || '—'}</span></div>
+                  <div><span className="text-on-surface-variant block mb-1">Email</span><span className="font-medium">{detail?.patient?.email || selectedPatient.email || '—'}</span></div>
+                  <div><span className="text-on-surface-variant block mb-1">Date of Birth</span><span className="font-medium">{detail?.patient?.date_of_birth ? format(parseISO(detail.patient.date_of_birth), 'MMM d, yyyy') : '—'}</span></div>
+                  <div><span className="text-on-surface-variant block mb-1">Insurance</span><span className="font-medium">{detail?.patient?.insurance_provider || '—'}</span></div>
+                  <div><span className="text-on-surface-variant block mb-1">Member ID</span><span className="font-medium">{detail?.patient?.insurance_member_id || '—'}</span></div>
+                  <div><span className="text-on-surface-variant block mb-1">Total Visits</span><span className="font-medium">{selectedPatient.total_visits || 0}</span></div>
                 </div>
               </div>
+              {/* Visit History */}
               <div>
-                <h3 className="font-bold text-on-surface mb-2">Visit History</h3>
-                <div className="bg-surface-container p-4 rounded-lg text-sm space-y-3">
-                  <div className="flex justify-between border-b border-surface pb-2">
-                    <span>Initial Evaluation</span><span className="text-on-surface-variant">Apr 21, 2026</span>
+                <h3 className="font-bold text-on-surface mb-2">Visit History ({detail?.appointments?.length || 0} appointments)</h3>
+                {detail?.appointments?.length ? (
+                  <div className="bg-surface-container p-4 rounded-lg text-sm space-y-3">
+                    {detail.appointments.map(apt => (
+                      <div key={apt.id} className="flex justify-between border-b border-surface pb-2 last:border-0 last:pb-0">
+                        <span>{apt.appointment_type}</span>
+                        <span className="text-on-surface-variant">{apt.datetime ? format(parseISO(apt.datetime), 'MMM d, yyyy') : '—'}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between border-b border-surface pb-2">
-                    <span>Follow-up</span><span className="text-on-surface-variant">Apr 20, 2026</span>
-                  </div>
-                </div>
+                ) : <p className="text-sm text-on-surface-variant">No appointments on record.</p>}
               </div>
-              <div>
-                <h3 className="font-bold text-on-surface mb-2">Physician Notes</h3>
-                <div className="bg-[#fff8e1] p-4 rounded-lg text-sm text-[#8a6000]">
-                  Patient reported mild discomfort in lower back. Recommended standard physiotherapy rotation. Follow-up scheduled.
+              {/* Notes */}
+              {detail?.patient?.notes && (
+                <div>
+                  <h3 className="font-bold text-on-surface mb-2">Notes</h3>
+                  <div className="bg-[#fff8e1] p-4 rounded-lg text-sm text-[#8a6000]">{detail.patient.notes}</div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

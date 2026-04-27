@@ -163,4 +163,62 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 
+// POST /patients/:id/message — send manual SMS to patient from dashboard
+router.post("/:id/message", async (req, res, next) => {
+  try {
+    const { message } = req.body;
+    if (!message?.trim()) {
+      return res.status(400).json({ error: "message is required" });
+    }
+
+    // Get patient info
+    const { data: patient, error: patErr } = await supabase
+      .from("patients")
+      .select("id, name, phone, clinic_id")
+      .eq("id", req.params.id)
+      .eq("clinic_id", req.clinicId)
+      .single();
+
+    if (patErr || !patient) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
+
+    // Try to send via Twilio (will log even in dev mode)
+    try {
+      const smsSvc = require("../../services/sms.service");
+      await smsSvc.send({
+        clinicId: req.clinicId,
+        to: patient.phone,
+        body: message.trim(),
+        smsType: "manual",
+        patientId: patient.id,
+      });
+    } catch (smsErr) {
+      console.error("[patients/message] SMS send failed:", smsErr.message);
+      // Still save to DB even if Twilio fails
+    }
+
+    // Save to sms_messages table
+    const { data: smsRecord, error: smsErr } = await supabase
+      .from("sms_messages")
+      .insert({
+        clinic_id: req.clinicId,
+        patient_id: patient.id,
+        to_number: patient.phone,
+        body: message.trim(),
+        direction: "outbound",
+        sms_type: "manual",
+        status: "sent",
+      })
+      .select()
+      .single();
+
+    if (smsErr) return res.status(400).json({ error: smsErr.message });
+
+    return res.status(201).json({ data: smsRecord });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

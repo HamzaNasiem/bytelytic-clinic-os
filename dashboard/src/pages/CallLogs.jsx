@@ -177,7 +177,19 @@ const TranscriptPanel = ({ call, onClose }) => {
       </div>
 
       {/* Footer */}
-      <div className="p-4 flex-shrink-0">
+      <div className="p-4 flex-shrink-0 space-y-2">
+        {call.recording_url && (
+          <a
+            href={call.recording_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-[0.75rem] text-sm font-semibold transition-colors"
+            style={{ backgroundColor: "#e3f2fd", color: "#006493" }}
+          >
+            <PlayCircle className="w-4 h-4" />
+            Play Recording
+          </a>
+        )}
         <button
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-[0.75rem] text-sm font-semibold transition-colors"
           style={{ backgroundColor: "#edf1ef", color: "#181c1c" }}
@@ -348,8 +360,19 @@ const CallLogs = () => {
                         </td>
 
                         {/* Duration */}
-                        <td className="table-cell text-sm font-medium text-on-surface">
-                          {formatDuration(call.duration_seconds)}
+                        <td className="table-cell">
+                          <p className="text-sm font-medium text-on-surface">{formatDuration(call.duration_seconds)}</p>
+                          {call.duration_seconds > 0 && (
+                            <div className="mt-1 h-1 w-16 rounded-full bg-surface-container overflow-hidden">
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  width: `${Math.min(100, (call.duration_seconds / 300) * 100)}%`,
+                                  backgroundColor: "#396a00"
+                                }}
+                              />
+                            </div>
+                          )}
                         </td>
 
                         {/* Direction */}
