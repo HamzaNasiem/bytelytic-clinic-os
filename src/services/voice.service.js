@@ -477,26 +477,31 @@ async function handleCallEvent(event) {
       }
     }
 
+    // ── UPSERT appointment — retell_call_id is unique so second event = no duplicate ──
     const { data: appointment, error: apptErr } = await supabase
       .from("appointments")
-      .insert({
-        clinic_id: clinicId,
-        patient_id: patient.id,
-        patient_name: patientName,
-        patient_phone: patientPhone,
-        appointment_type: appointmentType || "Follow-up",
-        datetime: finalDatetime,
-        duration_minutes: durationMinutes,
-        google_event_id: googleEventId,
-        status: "scheduled",
-        booked_by: "ai",
-        notes,
-      })
+      .upsert(
+        {
+          clinic_id: clinicId,
+          retell_call_id: retellCallId,   // ← unique key for idempotency
+          patient_id: patient.id,
+          patient_name: patientName,
+          patient_phone: patientPhone,
+          appointment_type: appointmentType || "Follow-up",
+          datetime: finalDatetime,
+          duration_minutes: durationMinutes,
+          google_event_id: googleEventId,
+          status: "scheduled",
+          booked_by: "ai",
+          notes,
+        },
+        { onConflict: "retell_call_id", ignoreDuplicates: false }
+      )
       .select()
       .single();
 
     if (apptErr)
-      throw new Error(`Failed to insert appointment: ${apptErr.message}`);
+      throw new Error(`Failed to upsert appointment: ${apptErr.message}`);
 
     await supabase
       .from("calls")
@@ -544,14 +549,19 @@ async function handleCallEvent(event) {
       patient.id,
     );
 
+    // UPSERT revenue event — retell_call_id unique prevents double-counting
     const revenueAmountCents = (clinic?.monthly_revenue_per_visit || 150) * 100;
-    await supabase.from("revenue_events").insert({
-      clinic_id: clinicId,
-      event_type: "missed_call_recovered",
-      amount_cents: revenueAmountCents,
-      appointment_id: appointment.id,
-      description: `Inbound call booked by AI — ${appointmentType || "appointment"} for ${patientName}`,
-    });
+    await supabase.from("revenue_events").upsert(
+      {
+        clinic_id: clinicId,
+        retell_call_id: retellCallId,     // ← unique key
+        event_type: "missed_call_recovered",
+        amount_cents: revenueAmountCents,
+        appointment_id: appointment.id,
+        description: `Inbound call booked by AI — ${appointmentType || "appointment"} for ${patientName}`,
+      },
+      { onConflict: "retell_call_id", ignoreDuplicates: true }
+    );
 
     console.log(
       `[voice.handleCallEvent] clinicId=${clinicId} BOOKED patient=${patientName} apptId=${appointment.id}`,
