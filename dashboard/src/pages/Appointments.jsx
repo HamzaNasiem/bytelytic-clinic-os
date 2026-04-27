@@ -125,7 +125,7 @@ const TranscriptPanel = ({ call, loading, onClose }) => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <p className="font-semibold text-sm text-on-surface">
-                {call.patient_name || call.from_number || "Unknown"}
+                {call.patients?.name || call.patient_name || call.from_number || "Unknown"}
               </p>
               <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#edf7e0", color: "#396a00" }}>
                 {call.call_type || "call"}

@@ -68,8 +68,8 @@ const TranscriptPanel = ({ call, onClose }) => {
     color: "#3d4946",
   };
 
-  const style = avatarStyle(call.patient_name || call.from_number || "U");
-  const patientName = call.patient_name || call.from_number || "Unknown Caller";
+  const style = avatarStyle(call.patients?.name || call.patient_name || call.from_number || "U");
+  const patientName = call.patients?.name || call.patient_name || call.from_number || "Unknown Caller";
 
   /* Parse transcript into lines */
   const lines = call.transcript
@@ -316,8 +316,9 @@ const CallLogs = () => {
                       bg: "#edf1ef",
                       color: "#3d4946",
                     };
+                    const resolvedName = call.patients?.name || call.patient_name || call.from_number || "Unknown";
                     const isSelected = selectedCall?.id === call.id;
-                    const style = avatarStyle(call.patient_name || call.from_number || "U");
+                    const style = avatarStyle(resolvedName);
 
                     return (
                       <tr
@@ -346,14 +347,14 @@ const CallLogs = () => {
                               className="w-8 h-8 rounded-full flex items-center justify-center text-[0.6rem] font-bold flex-shrink-0"
                               style={{ backgroundColor: style.bg, color: style.text }}
                             >
-                              {initials(call.patient_name || call.from_number || "Unknown")}
+                              {initials(resolvedName)}
                             </div>
                             <div>
                               <p className="text-sm font-semibold text-on-surface">
-                                {call.patient_name || call.from_number || "Unknown"}
+                                {resolvedName}
                               </p>
                               <p className="text-[0.65rem] text-on-surface-variant">
-                                {call.patient_name ? call.from_number || "Existing Patient" : ""}
+                                {(call.patients?.name || call.patient_name) ? call.from_number || "" : ""}
                               </p>
                             </div>
                           </div>

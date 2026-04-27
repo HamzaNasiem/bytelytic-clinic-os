@@ -14,7 +14,7 @@ router.get("/", async (req, res, next) => {
     let query = supabase
       .from("calls")
       .select(
-        "id, direction, call_type, from_number, to_number, patient_id, patient_name, duration_seconds, outcome, status, transcript, recording_url, started_at, ended_at, appointment_id, created_at",
+        "id, direction, call_type, from_number, to_number, patient_id, patient_name, duration_seconds, outcome, status, transcript, recording_url, started_at, ended_at, appointment_id, created_at, patients(id, name, phone)",
         { count: "exact" }
       )
       .eq("clinic_id", req.clinicId)

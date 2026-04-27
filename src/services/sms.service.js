@@ -183,34 +183,34 @@ async function send(
     }
 
     const client = getTwilioClient();
-    const message = await client.messages.create({
-      from: fromNumber,
-      to: toPhone,
-      body,
-    });
+    let twilioSid = null;
+    let smsStatus = "failed";
+    try {
+      const message = await client.messages.create({ from: fromNumber, to: toPhone, body });
+      twilioSid = message.sid;
+      smsStatus = "sent";
+      console.log(`[sms.send] clinicId=${clinicId} to=${toPhone} sid=${message.sid}`);
+    } catch (twilioErr) {
+      console.error(`[sms.send] Twilio error clinicId=${clinicId} to=${toPhone}`, twilioErr.message);
+      // Still save to sms_messages so Comms Log shows the attempt
+    }
 
     await saveSmsRecord({
       clinicId,
       patientId,
-      twilioSid: message.sid,
+      twilioSid: twilioSid || `failed_${Date.now()}`,
       direction: "outbound",
       fromNumber,
       toNumber: toPhone,
       body,
       smsType: type,
       appointmentId,
-      status: "sent",
+      status: smsStatus,
     });
 
-    console.log(
-      `[sms.send] clinicId=${clinicId} to=${toPhone} sid=${message.sid}`,
-    );
-    return { success: true, data: { sid: message.sid } };
+    return { success: smsStatus === "sent", data: { sid: twilioSid } };
   } catch (error) {
-    console.error(
-      `[sms.send] clinicId=${clinicId} to=${toPhone}`,
-      error.message,
-    );
+    console.error(`[sms.send] clinicId=${clinicId} to=${toPhone}`, error.message);
     return { success: false, error: error.message };
   }
 }
