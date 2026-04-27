@@ -6,7 +6,7 @@ const env = require("../config/env");
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
 const FREE_MODEL = "google/gemma-3-27b-it:free";
 
-// Full fallback chain — tries every free model across both keys before giving up
+// Full fallback chain — interleaves backup key per-model for max reliability
 function buildAttemptChain(callerModel) {
   const primary = env.openrouterApiKey;
   const backup = env.openrouterApiKeyBackup;
@@ -17,22 +17,27 @@ function buildAttemptChain(callerModel) {
     return chain;
   }
 
-  // Free models in quality order — all tried on primary key, then backup key
-  // Note: deepseek and qwen removed — 404 on OpenRouter free tier as of Apr 2026
+  // Free models — updated Apr 2026 (only models confirmed working on OpenRouter free tier)
   const FREE_MODELS = [
-    "google/gemma-3-27b-it:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "google/gemma-4-26b-a4b-it:free",
-    "mistralai/mistral-7b-instruct:free",
-    "microsoft/phi-4-reasoning:free",
-    "nvidia/llama-3.1-nemotron-nano-8b-instruct:free",
+    "google/gemma-3-27b-it:free",          // Google Gemma 3 27B
+    "google/gemma-4-26b-a4b-it:free",      // Google Gemma 4
+    "qwen/qwen3-30b-a3b:free",             // Qwen3 30B (new Apr 2026)
+    "qwen/qwq-32b:free",                   // Qwen QwQ 32B reasoning
+    "deepseek/deepseek-r1-0528:free",      // DeepSeek R1 latest
+    "deepseek/deepseek-chat-v3-0324:free", // DeepSeek Chat V3
+    "meta-llama/llama-4-scout:free",       // Meta Llama 4 Scout
   ];
 
-  const chain = FREE_MODELS.map((m) => ({ key: primary, model: m }));
-  if (backup) {
-    chain.push({ key: backup, model: "openrouter/auto" });
-    FREE_MODELS.forEach((m) => chain.push({ key: backup, model: m }));
+  // Interleave: try primary then backup for EACH model (not all primary then all backup)
+  // This means if gemma-3 quota is exceeded on primary, we immediately try backup key
+  const chain = [];
+  for (const m of FREE_MODELS) {
+    chain.push({ key: primary, model: m });
+    if (backup) chain.push({ key: backup, model: m });
   }
+  // Final fallback: openrouter/auto picks best available model
+  if (backup) chain.push({ key: backup, model: "openrouter/auto" });
+  if (primary) chain.push({ key: primary, model: "openrouter/auto" });
   return chain;
 }
 
