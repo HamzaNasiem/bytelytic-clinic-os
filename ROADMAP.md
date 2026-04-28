@@ -429,16 +429,16 @@ const filtered = calls.filter(c => {
 
 ### 3. Post-Visit Follow-Up SMS
 
-**Code:** `src/services/followup.service.js` ← exists, untested
+**Code:** `src/services/followup.service.js` ← ✅ Tested and Live
 
-- [ ] `followup.service.js` — send follow-up 48h after completed appointment
-- [ ] Message: "Hi [name]! Checking in after your [type]. How are you feeling? Reply anytime."
-- [ ] `sms.service.js` — classifySentiment() already handles reply analysis
-- [ ] Negative sentiment → flag in dashboard for doctor review
-- [ ] `sms_messages.reply_sentiment` field — already in schema
-- [ ] Dashboard → Patient detail → show sentiment icon next to SMS reply
-- [ ] Job: Add `followup.job.js` — runs daily, finds completed appointments 48h ago where followup not sent
-- [ ] Schema change: add `followup_sent BOOLEAN DEFAULT false` to appointments table
+- [x] `followup.service.js` — send follow-up 48h after completed appointment
+- [x] Message: "Hi [name]! Checking in after your [type]. How are you feeling? Reply anytime."
+- [x] `sms.service.js` — classifySentiment() already handles reply analysis
+- [x] Negative sentiment → flag in dashboard for doctor review
+- [x] `sms_messages.reply_sentiment` field — already in schema
+- [x] Dashboard → Patient detail → show sentiment icon next to SMS reply
+- [x] Job: Add `followup.job.js` — runs daily, finds completed appointments 48h ago where followup not sent
+- [x] Schema change: add `followup_sent BOOLEAN DEFAULT false` to appointments table
 
 ---
 
