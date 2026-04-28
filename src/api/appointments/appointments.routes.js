@@ -17,7 +17,7 @@ router.get("/", async (req, res, next) => {
     let query = supabase
       .from("appointments")
       .select(
-        "id, patient_name, patient_phone, appointment_type, datetime, duration_minutes, status, booked_by, reminder_sent, insurance_verified, created_at",
+        "id, patient_name, patient_phone, appointment_type, datetime, duration_minutes, status, booked_by, reminder_sent, insurance_verified, noshow_risk, created_at",
         { count: "exact" },
       )
       .eq("clinic_id", req.clinicId)
@@ -56,7 +56,7 @@ router.get("/today", async (req, res, next) => {
     const { data, error } = await supabase
       .from("appointments")
       .select(
-        "id, patient_name, patient_phone, appointment_type, datetime, duration_minutes, status, booked_by, reminder_sent",
+        "id, patient_name, patient_phone, appointment_type, datetime, duration_minutes, status, booked_by, reminder_sent, noshow_risk",
       )
       .eq("clinic_id", req.clinicId)
       .gte("datetime", todayStart)

@@ -492,7 +492,14 @@ const Appointments = () => {
                                       {initials(apt.patient_name)}
                                     </div>
                                     <div>
-                                      <p className="font-semibold text-sm text-on-surface">{apt.patient_name}</p>
+                                      <div className="flex items-center gap-2">
+                                        <p className="font-semibold text-sm text-on-surface">{apt.patient_name}</p>
+                                        {apt.noshow_risk >= 0.5 && (
+                                          <span className="text-[0.6rem] font-bold px-1.5 py-0.5 rounded flex-shrink-0 flex items-center gap-1" style={{ backgroundColor: "#ffdad6", color: "#410002" }}>
+                                            <span className="w-1.5 h-1.5 rounded-full bg-[#ba1a1a] shadow-[0_0_4px_#ba1a1a]"></span> HIGH RISK
+                                          </span>
+                                        )}
+                                      </div>
                                       <div className="flex items-center gap-1 mt-0.5">
                                         {apt.booked_by === "ai"
                                           ? <Bot className="w-3 h-3 text-primary" />

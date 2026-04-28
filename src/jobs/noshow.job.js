@@ -36,6 +36,16 @@ async function processNoshowsForClinic(clinicId) {
   const scores = predictResult.data;
   if (!scores.length) return;
 
+  // Persist the calculated AI risk scores back to appointments table
+  await Promise.all(
+    scores.map((s) =>
+      supabase
+        .from("appointments")
+        .update({ noshow_risk: s.riskScore })
+        .eq("id", s.appointmentId)
+    )
+  );
+
   // Take top N highest-risk appointments
   const highRisk = scores
     .slice(0, TOP_RISK_COUNT)
@@ -81,6 +91,18 @@ async function processNoshowsForClinic(clinicId) {
         `at ${appt.clinics?.name || "your clinic"} tomorrow, ${formattedDate} at ${formattedTime}. ` +
         `Reply CONFIRM to confirm or CANCEL to cancel. —Bytelytic`;
 
+      // Create job record for crash-safety / audit
+      const { data: jobRow } = await supabase
+        .from("jobs")
+        .insert({
+          clinic_id: clinicId,
+          job_type: "sms_dispatch",
+          status: "pending",
+          details: { appointmentId: appt.id, riskScore: scored.riskScore, purpose: "noshow_confirmation" }
+        })
+        .select()
+        .single();
+
       const smsResult = await smsSvc.send(
         clinicId,
         appt.patient_phone,
@@ -89,6 +111,17 @@ async function processNoshowsForClinic(clinicId) {
         appt.id,
         appt.patient_id,
       );
+
+      if (jobRow) {
+        await supabase
+          .from("jobs")
+          .update({
+            status: smsResult.success ? "done" : "failed",
+            error: smsResult.error || null,
+            completed_at: new Date().toISOString()
+          })
+          .eq("id", jobRow.id);
+      }
 
       if (smsResult.success) {
         console.info(

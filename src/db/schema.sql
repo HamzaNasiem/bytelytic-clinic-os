@@ -72,6 +72,7 @@ CREATE TABLE appointments (
   booked_by           TEXT        DEFAULT 'ai'
     CHECK (booked_by IN ('ai','staff','patient')),
   notes               TEXT,
+  noshow_risk         REAL,                                             -- AI generated risk score 0.0-1.0
   created_at          TIMESTAMPTZ DEFAULT NOW()
 );
 
