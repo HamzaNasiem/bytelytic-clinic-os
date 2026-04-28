@@ -40,7 +40,7 @@ const STATUS_DOT = {
 };
 
 /* ─── Patient Detail Panel ────────────────────────────────── */
-const PatientDetail = ({ patient, detail, loading, onClose }) => {
+const PatientDetail = ({ patient, detail, loading, activeFilter, onBook, onMessage, onRecall, onClose }) => {
   if (!patient) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-on-surface-variant p-8 text-center">
@@ -97,14 +97,7 @@ const PatientDetail = ({ patient, detail, loading, onClose }) => {
           <div className="flex gap-2 flex-wrap flex-shrink-0 w-full sm:w-auto">
             {activeFilter === "Recall" && (
               <button 
-                onClick={async () => {
-                  try {
-                    await api.post(`/patients/recall/${patient.id}`);
-                    alert("Recall call initiated! Check Retell or Call Logs shortly.");
-                  } catch (e) {
-                    alert("Failed to initiate recall: " + (e.response?.data?.error || e.message));
-                  }
-                }}
+                onClick={onRecall}
                 className="flex-1 sm:flex-none justify-center btn-primary text-xs py-2 px-3"
                 style={{ backgroundColor: "#396a00" }}
               >
@@ -112,11 +105,11 @@ const PatientDetail = ({ patient, detail, loading, onClose }) => {
                 Start Recall
               </button>
             )}
-            <button onClick={() => { setShowBookApptModal(true); setBookForm({ appointment_type: 'Initial Evaluation', date: '', time: '', duration_minutes: 60 }); setBookError(''); }} className="flex-1 sm:flex-none justify-center btn-primary text-xs py-2 px-3">
+            <button onClick={onBook} className="flex-1 sm:flex-none justify-center btn-primary text-xs py-2 px-3">
               <Calendar className="w-3.5 h-3.5 mr-1" />
               Book Appt
             </button>
-            <button onClick={() => { setShowMessageModal(true); setMsgText(''); setMsgError(''); }} className="flex-1 sm:flex-none justify-center btn-secondary text-xs py-2 px-3">
+            <button onClick={onMessage} className="flex-1 sm:flex-none justify-center btn-secondary text-xs py-2 px-3">
               <MessageSquare className="w-3.5 h-3.5 mr-1" />
               Message
             </button>
@@ -533,6 +526,17 @@ const Patients = () => {
             patient={selectedPatient}
             detail={detail}
             loading={detailLoading}
+            activeFilter={activeFilter}
+            onBook={() => { setShowBookApptModal(true); setBookForm({ appointment_type: 'Initial Evaluation', date: '', time: '', duration_minutes: 60 }); setBookError(''); }}
+            onMessage={() => { setShowMessageModal(true); setMsgText(''); setMsgError(''); }}
+            onRecall={async () => {
+              try {
+                await api.post(`/patients/recall/${selectedPatient.id}`);
+                alert("Recall call initiated! Check Retell or Call Logs shortly.");
+              } catch (e) {
+                alert("Failed to initiate recall: " + (e.response?.data?.error || e.message));
+              }
+            }}
             onClose={() => setSelectedPatient(null)}
           />
         </div>
