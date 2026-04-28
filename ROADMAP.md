@@ -394,21 +394,21 @@ const filtered = calls.filter(c => {
 
 # PHASE 3 — WOW Automation Features
 
-**Status: 🔲 Code Exists (Untested)**
+**Status: 🔄 IN PROGRESS (Recall ✅ | No-Show ✅)**
 **Goal:** AI proactively works for the clinic — recalls patients, predicts no-shows, handles follow-ups
 
 ---
 
 ### 1. Patient Recall System (Outbound AI Calls)
 
-**Code:** `src/services/recall.service.js` + `src/jobs/recall.job.js` ← exists, untested
+**Code:** `src/services/recall.service.js` + `src/jobs/recall.job.js` ← ✅ Tested and Live
 
-- [ ] `recall.service.js` — getRecallCandidates() — finds patients with last_visit = 30/60/90 days ago
-- [ ] `recall.service.js` — initiateRecall() — creates Retell outbound call to patient
-- [ ] `recall.service.js` — handleRecallResult() — if booked: create appointment + revenue_event
-- [ ] `recall.job.js` — daily 20:00 UTC — max 20 calls per clinic per day
-- [ ] Dashboard → Patients page — "Recall Candidates" section
-- [ ] Test: set patient `last_visit_date = 31 days ago` → run job → call goes out → appointment booked
+- [x] `recall.service.js` — getRecallCandidates() — finds patients with last_visit = 30/60/90 days ago
+- [x] `recall.service.js` — initiateRecall() — creates Retell outbound call to patient
+- [x] `recall.service.js` — handleRecallResult() — if booked: create appointment + revenue_event
+- [x] `recall.job.js` — daily 20:00 UTC — max 20 calls per clinic per day
+- [x] Dashboard → Patients page — "Recall Candidates" section
+- [x] Test: set patient `last_visit_date = 31 days ago` → run job → call goes out → appointment booked
 
 **Business impact:** $150 per recovered patient × 5-10 patients/month = $750-1500 extra revenue per clinic
 
@@ -416,14 +416,14 @@ const filtered = calls.filter(c => {
 
 ### 2. No-Show Prediction System
 
-**Code:** `src/services/noshow.service.js` + `src/jobs/noshow.job.js` ← exists, untested
+**Code:** `src/services/noshow.service.js` + `src/jobs/noshow.job.js` ← ✅ Tested and Live
 
-- [ ] `noshow.service.js` — predictNoshows() — AI scores upcoming appointments by risk
-- [ ] Risk factors: past no-shows, day of week, appointment type, time of day
-- [ ] `noshow.job.js` — daily 18:00 UTC — top 3 high-risk → extra confirmation SMS
-- [ ] `jobs` table — job record before each SMS (crash-safe)
-- [ ] Dashboard → Appointments page — risk badge (🔴 High Risk) next to patient name
-- [ ] Test: create patient with `no_show_count = 3` → book appointment → check risk score
+- [x] `noshow.service.js` — predictNoshows() — AI scores upcoming appointments by risk
+- [x] Risk factors: past no-shows, day of week, appointment type, time of day
+- [x] `noshow.job.js` — daily 18:00 UTC — top 3 high-risk → extra confirmation SMS
+- [x] `jobs` table — job record before each SMS (crash-safe)
+- [x] Dashboard → Appointments page — risk badge (🔴 High Risk) next to patient name
+- [x] Test: create patient with `no_show_count = 3` → book appointment → check risk score
 
 ---
 

@@ -16,8 +16,12 @@ When a patient calls the clinic number:
 5. **SMS confirmation** is sent to the patient instantly
 6. **Revenue is tracked** automatically on the dashboard
 7. **Reminder SMS** is sent 24 hours before the appointment automatically
-
 The clinic owner logs into the dashboard and sees everything in real-time.
+
+### 🤖 Autonomous Background AI Actions
+1. **Predictive No-Show Engine**: Every evening, AI evaluates tomorrow's itinerary using historical data. High-risk patients automatically receive targeted Twilio SMS interventions, and are visually flagged (🔴 **HIGH RISK**) on the dashboard.
+2. **Automated Patient Recall**: Scans the database for patients who haven't visited in 30/60/90 days and triggers *outbound* Retell AI voice calls to rebook their next session, generating pure passive revenue.
+3. **Smart Reminders**: 24-hour intelligent SMS reminders with natural language handling (e.g., patient texts back "I'll be running late").
 
 ---
 
