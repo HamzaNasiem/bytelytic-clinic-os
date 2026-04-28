@@ -26,6 +26,7 @@ async function getFollowupCandidates(clinicId) {
       .select("id, patient_name, patient_phone, appointment_type, datetime")
       .eq("clinic_id", clinicId)
       .eq("status", "completed")
+      .eq("followup_sent", false)
       .gte("datetime", `${dateStr}T00:00:00.000Z`)
       .lte("datetime", `${dateStr}T23:59:59.999Z`);
 
@@ -35,22 +36,7 @@ async function getFollowupCandidates(clinicId) {
       );
     if (!appointments?.length) return { success: true, data: [] };
 
-    const candidateIds = appointments.map((a) => a.id);
-
-    // Exclude appointments that already have a followup SMS sent
-    const { data: sentFollowups } = await supabase
-      .from("sms_messages")
-      .select("appointment_id")
-      .eq("clinic_id", clinicId)
-      .eq("sms_type", "followup")
-      .in("appointment_id", candidateIds);
-
-    const alreadySent = new Set(
-      (sentFollowups || []).map((s) => s.appointment_id),
-    );
-    const candidates = appointments.filter((a) => !alreadySent.has(a.id));
-
-    return { success: true, data: candidates };
+    return { success: true, data: appointments };
   } catch (error) {
     console.error(
       `[followup.getFollowupCandidates] clinicId=${clinicId}`,

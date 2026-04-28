@@ -15,6 +15,7 @@ const reminderJob = require("./jobs/reminder.job");
 const recallJob = require("./jobs/recall.job");
 const insuranceJob = require("./jobs/insurance.job");
 const noshowJob = require("./jobs/noshow.job");
+const followupJob = require("./jobs/followup.job");
 
 // ─────────────────────────────────────────────────────────────
 // LOGGER
@@ -98,6 +99,7 @@ function startJobs() {
     recallJob.start(); // daily 20:00 UTC   — outbound recall calls
     insuranceJob.start(); // daily 09:00 UTC   — 48h insurance verification
     noshowJob.start(); // daily 18:00 UTC   — no-show prediction + confirmations
+    followupJob.start(); // daily 10:00 UTC   — post-visit follow-ups
     log.info("[server] all cron jobs scheduled");
   } catch (e) {
     // Failing to register a job must not crash the server —

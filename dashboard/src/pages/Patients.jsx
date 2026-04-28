@@ -294,11 +294,19 @@ const PatientDetail = ({ patient, detail, loading, activeFilter, onBook, onMessa
                             sms.direction === "inbound" ? "#396a00" : "#585d77",
                         }}
                       />
-                      <p className="overline mb-0.5">
-                        {sms.direction === "inbound" ? "📩 SMS Received" : "📤 Automated SMS"}
+                      <p className="overline mb-0.5 flex items-center gap-1.5">
+                        <span>{sms.direction === "inbound" ? "📩 SMS Received" : "📤 Automated SMS"}</span>
+                        {sms.direction === "inbound" && sms.reply_sentiment && (
+                          <span className={`px-1.5 py-0.5 rounded text-[0.55rem] font-bold ${
+                            sms.reply_sentiment === 'positive' ? 'bg-[#edf7e0] text-[#396a00]' :
+                            sms.reply_sentiment === 'negative' || sms.reply_sentiment === 'concern' ? 'bg-[#fce4ec] text-[#b71c1c]' :
+                            'bg-surface-container text-on-surface-variant'
+                          }`}>
+                            {sms.reply_sentiment.toUpperCase()}
+                          </span>
+                        )}
                         {sms.created_at
-                          ? " · " +
-                            format(parseISO(sms.created_at), "MMM d, h:mm a")
+                          ? <span className="font-normal opacity-70">· {format(parseISO(sms.created_at), "MMM d, h:mm a")}</span>
                           : ""}
                       </p>
                       <p className="text-xs text-on-surface leading-relaxed">
