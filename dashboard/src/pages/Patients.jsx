@@ -633,12 +633,14 @@ const Patients = () => {
                 try {
                   const datetime = new Date(`${bookForm.date}T${bookForm.time}:00`).toISOString();
                   await api.post('/appointments', {
+                    patient_id: selectedPatient.id,
                     patient_name: selectedPatient.name,
                     patient_phone: selectedPatient.phone,
                     appointment_type: bookForm.appointment_type,
                     datetime,
                     duration_minutes: Number(bookForm.duration_minutes),
                   });
+                  fetchPatients();
                   setShowBookApptModal(false);
                 } catch(err) { setBookError(err.response?.data?.error || 'Failed to book appointment.'); }
                 finally { setBookSaving(false); }

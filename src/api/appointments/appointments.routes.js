@@ -77,6 +77,7 @@ router.post("/", async (req, res, next) => {
     const {
       patient_name,
       patient_phone,
+      patient_id,
       appointment_type,
       datetime,
       duration_minutes,
@@ -104,6 +105,7 @@ router.post("/", async (req, res, next) => {
       .from("appointments")
       .insert({
         clinic_id: req.clinicId,
+        patient_id,
         patient_name,
         patient_phone,
         appointment_type: appointment_type || "Follow-up",

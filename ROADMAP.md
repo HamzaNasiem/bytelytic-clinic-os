@@ -379,13 +379,13 @@ const filtered = calls.filter(c => {
 ### Phase 2 Remaining Checklist
 
 ```
-[ ] Twilio Console → +15755734355 → SMS Webhook URL set
-[ ] Retell Dashboard → Phone Numbers → link +15755734355 to agent
-[ ] Setup page → "Create Agent" → retell_agent_id saved to DB
-[ ] Call Logs filter tabs — implement client-side filter logic
-[ ] Patients page → Book Appointment → wire to API
-[ ] Appointments page → click row → show transcript
-[ ] Make 3 test calls → verify revenue tracking
+[x] Twilio Console → +15755734355 → SMS Webhook URL set
+[x] Retell Dashboard → Phone Numbers → link +15755734355 to agent
+[x] Setup page → "Create Agent" → retell_agent_id saved to DB
+[x] Call Logs filter tabs — implement client-side filter logic
+[x] Patients page → Book Appointment → wire to API
+[x] Appointments page → click row → show transcript
+[x] Make 3 test calls → verify revenue tracking
 ```
 
 ---
