@@ -34,6 +34,7 @@ function buildSystemPrompt(clinic) {
 
 Tasks: Book/reschedule/cancel appointments. Answer hours, location, insurance.
 New patients: collect full name, DOB, phone, insurance provider.
+If a patient asks to reschedule, ask them what new date and time works best for them.
 Always confirm date + time + type before finalizing. Tell patient SMS confirmation follows.
 
 Clinic hours: ${hoursFormatted}
@@ -41,7 +42,7 @@ Appointment types: ${typesFormatted}
 
 Rules:
 - Never give medical advice — say "The doctor will address that at your appointment"
-- Call book_appointment function when all booking details are collected
+- Call book_appointment function when all booking or rescheduling details are collected
 - If patient asks about emergencies, advise them to call 911 or go to the nearest ER`;
 }
 
@@ -64,7 +65,7 @@ async function extractBookingFromTranscript(
       },
       {
         role: "user",
-        content: `Extract appointment booking data from this clinic call transcript.
+        content: `Extract appointment booking or rescheduling data from this clinic call transcript.
 The clinic is in timezone: ${timezone}
 Today's reference date: ${new Date().toLocaleDateString("en-US", { timeZone: timezone, weekday: "long", year: "numeric", month: "long", day: "numeric" })}
 
@@ -76,6 +77,7 @@ ${transcript}
 Return a JSON object:
 {
   "hasBookingIntent": true or false,
+  "callIntent":       "booking | rescheduling | cancellation | general",
   "patientName":      "Full Name or null",
   "patientPhone":     "E.164 format e.g. +12025550100 or null",
   "dateOfBirth":      "YYYY-MM-DD or null",
@@ -86,7 +88,7 @@ Return a JSON object:
   "notes":            "any other info or null"
 }
 
-If no appointment was requested, set hasBookingIntent to false and all other fields to null.`,
+If no appointment was requested or changed, set hasBookingIntent to false and all other fields to null. Set hasBookingIntent to true if the patient is booking OR rescheduling.`,
       },
     ],
   });
@@ -387,8 +389,9 @@ async function handleCallEvent(event) {
     }
 
     const {
+      callIntent,
       patientName,
-      patientPhone,
+      patientPhone: extractedPhone,
       dateOfBirth,
       insuranceProvider,
       appointmentType,
@@ -396,6 +399,8 @@ async function handleCallEvent(event) {
       durationMinutes = 30,
       notes,
     } = booking;
+
+    const patientPhone = extractedPhone || fromNumber;
 
     if (!patientPhone || !datetime) {
       console.warn(
@@ -451,6 +456,67 @@ async function handleCallEvent(event) {
       );
     }
 
+    // ── Rescheduling Flow ──
+    if (callIntent === "rescheduling") {
+      const { data: existingAppt } = await supabase
+        .from("appointments")
+        .select("*")
+        .eq("patient_phone", patientPhone)
+        .eq("clinic_id", clinicId)
+        .in("status", ["scheduled", "confirmed"])
+        .order("datetime", { ascending: true })
+        .limit(1)
+        .single();
+
+      if (existingAppt && slotAvailable) {
+        let newGoogleEventId = null;
+        if (existingAppt.google_event_id) {
+          await calendarSvc.cancelEvent(clinicId, existingAppt.google_event_id);
+        }
+        
+        const calResult = await calendarSvc.createEvent(clinicId, {
+          patient_name: patientName || existingAppt.patient_name,
+          appointment_type: appointmentType || existingAppt.appointment_type,
+          datetime: finalDatetime,
+          duration_minutes: durationMinutes,
+          notes,
+        });
+        
+        if (calResult.success) {
+          newGoogleEventId = calResult.data.googleEventId;
+        }
+
+        await supabase.from("appointments").update({
+          datetime: finalDatetime,
+          google_event_id: newGoogleEventId || existingAppt.google_event_id,
+          updated_at: new Date().toISOString()
+        }).eq("id", existingAppt.id);
+
+        const formatter = new Intl.DateTimeFormat("en-US", {
+          weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago"
+        });
+        await smsSvc.send(
+          clinicId,
+          patientPhone,
+          `Your appointment has been rescheduled to ${formatter.format(new Date(finalDatetime))}. Reply YES to confirm.`
+        );
+
+        await supabase.from("calls").update({
+          patient_id: existingAppt.patient_id,
+          patient_name: patientName || existingAppt.patient_name,
+          appointment_id: existingAppt.id,
+          outcome: "completed",
+          call_type: "rescheduling",
+        }).eq("retell_call_id", retellCallId);
+
+        return { success: true, data: { action: "rescheduled", appointmentId: existingAppt.id } };
+      } else if (!existingAppt) {
+        console.warn(`[voice.handleCallEvent] Rescheduling failed: No upcoming appointment found for ${patientPhone}`);
+        // If not found, we fall through and just book a new appointment.
+      }
+    }
+
+    // ── Booking Flow (New Appointment) ──
     const patient = await upsertPatient(clinicId, {
       patientName,
       patientPhone,
@@ -557,19 +623,30 @@ async function handleCallEvent(event) {
       patient.id,
     );
 
-    // UPSERT revenue event — retell_call_id unique prevents double-counting
-    const revenueAmountCents = (clinic?.monthly_revenue_per_visit || 150) * 100;
-    await supabase.from("revenue_events").upsert(
-      {
-        clinic_id: clinicId,
-        retell_call_id: retellCallId,     // ← unique key
-        event_type: "missed_call_recovered",
-        amount_cents: revenueAmountCents,
-        appointment_id: appointment.id,
-        description: `Inbound call booked by AI — ${appointmentType || "appointment"} for ${patientName}`,
-      },
-      { onConflict: "retell_call_id", ignoreDuplicates: true }
-    );
+    // ── Dispatch outcomes to specialized services if outbound ──
+    const purpose = event.metadata?.purpose;
+    
+    if (purpose === "recall") {
+      const recallSvc = require("./recall.service");
+      await recallSvc.processRecallOutcome(clinicId, retellCallId, "booked");
+    } else if (purpose === "waitlist_offer") {
+      const waitlistSvc = require("./waitlist.service");
+      await waitlistSvc.processOfferOutcome(clinicId, retellCallId, "booked", event.metadata.waitlistId);
+    } else {
+      // UPSERT revenue event for INBOUND missed call recovered
+      const revenueAmountCents = (clinic?.monthly_revenue_per_visit || 150) * 100;
+      await supabase.from("revenue_events").upsert(
+        {
+          clinic_id: clinicId,
+          retell_call_id: retellCallId,     // ← unique key
+          event_type: "missed_call_recovered",
+          amount_cents: revenueAmountCents,
+          appointment_id: appointment.id,
+          description: `Inbound call booked by AI — ${appointmentType || "appointment"} for ${patientName}`,
+        },
+        { onConflict: "retell_call_id", ignoreDuplicates: true }
+      );
+    }
 
     console.log(
       `[voice.handleCallEvent] clinicId=${clinicId} BOOKED patient=${patientName} apptId=${appointment.id}`,

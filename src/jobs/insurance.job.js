@@ -15,22 +15,52 @@ async function getActiveClinics() {
 }
 
 async function processInsuranceForClinic(clinicId) {
-  // processVerifications internally calls getVerificationCandidates (48h window)
-  // and sends an SMS per appointment — jobs table is written inside sendVerificationRequest
-  const result = await insuranceSvc.processVerifications(clinicId);
+  try {
+    const { data: jobRecord, error: jobErr } = await supabase
+      .from("jobs")
+      .insert({
+        clinic_id: clinicId,
+        job_type: "insurance_verification",
+        status: "processing",
+        payload: {}
+      })
+      .select()
+      .single();
 
-  if (!result.success) {
-    console.error(
-      `[insurance.job] clinicId=${clinicId} processVerifications failed`,
-      result.error,
-    );
-    return;
-  }
+    if (jobErr) {
+      console.error(`[insurance.job] Failed to lock job clinic=${clinicId}`, jobErr.message);
+      return;
+    }
 
-  if (result.data.sent > 0 || result.data.failed > 0) {
-    console.info(
-      `[insurance.job] clinicId=${clinicId} sent=${result.data.sent} failed=${result.data.failed}`,
-    );
+    const result = await insuranceSvc.processVerifications(clinicId);
+
+    if (!result.success) {
+      console.error(`[insurance.job] clinicId=${clinicId} processVerifications failed`, result.error);
+      await supabase
+        .from("jobs")
+        .update({
+          status: "failed",
+          ran_at: new Date().toISOString(),
+          error_message: result.error
+        })
+        .eq("id", jobRecord.id);
+      return;
+    }
+
+    await supabase
+      .from("jobs")
+      .update({
+        status: "done",
+        ran_at: new Date().toISOString(),
+        error_message: `Sent: ${result.data.sent}. Failed: ${result.data.failed}`
+      })
+      .eq("id", jobRecord.id);
+
+    if (result.data.sent > 0 || result.data.failed > 0) {
+      console.info(`[insurance.job] clinicId=${clinicId} sent=${result.data.sent} failed=${result.data.failed}`);
+    }
+  } catch (error) {
+    console.error(`[insurance.job] Execution failed clinic=${clinicId}`, error.message);
   }
 }
 

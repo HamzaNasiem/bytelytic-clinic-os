@@ -116,7 +116,7 @@ async function detectIntent(body, clinicId) {
       messages: [
         {
           role: "user",
-          content: `You are interpreting a patient SMS to a clinic.\n\nUpcoming appointments:\n${apptContext}\n\nPatient SMS: "${body}"\n\nRespond with JSON only (no markdown):\n{\n  "intent": "confirm" | "cancel" | "reschedule" | "question" | "other",\n  "appointmentId": "<uuid or null>",\n  "details": "<brief explanation>"\n}`,
+          content: `You are interpreting a patient SMS to a clinic.\n\nUpcoming appointments:\n${apptContext}\n\nPatient SMS: "${body}"\n\nRespond with JSON only (no markdown):\n{\n  "intent": "confirm" | "cancel" | "reschedule" | "question" | "insurance_verify_yes" | "insurance_verify_no" | "other",\n  "appointmentId": "<uuid or null>",\n  "details": "<brief explanation>"\n}`,
         },
       ],
     });
@@ -185,12 +185,14 @@ async function send(
     const client = getTwilioClient();
     let twilioSid = null;
     let smsStatus = "failed";
+    let twilioErrorMsg = null;
     try {
       const message = await client.messages.create({ from: fromNumber, to: toPhone, body });
       twilioSid = message.sid;
       smsStatus = "sent";
       console.log(`[sms.send] clinicId=${clinicId} to=${toPhone} sid=${message.sid}`);
     } catch (twilioErr) {
+      twilioErrorMsg = twilioErr.message;
       console.error(`[sms.send] Twilio error clinicId=${clinicId} to=${toPhone}`, twilioErr.message);
       // Still save to sms_messages so Comms Log shows the attempt
     }
@@ -208,7 +210,7 @@ async function send(
       status: smsStatus,
     });
 
-    return { success: smsStatus === "sent", data: { sid: twilioSid } };
+    return { success: smsStatus === "sent", data: { sid: twilioSid }, error: twilioErrorMsg };
   } catch (error) {
     console.error(`[sms.send] clinicId=${clinicId} to=${toPhone}`, error.message);
     return { success: false, error: error.message };
@@ -266,6 +268,20 @@ async function handleInbound(from, body, clinicId, twilioSid = null) {
         console.log(
           `[sms.handleInbound] clinicId=${clinicId} appointment cancelled apptId=${detectedApptId}`,
         );
+      } else if (intent === "insurance_verify_yes") {
+        await supabase
+          .from("appointments")
+          .update({ insurance_verified: true })
+          .eq("id", detectedApptId)
+          .eq("clinic_id", clinicId);
+        console.log(`[sms.handleInbound] clinicId=${clinicId} insurance verified apptId=${detectedApptId}`);
+      } else if (intent === "insurance_verify_no") {
+        await supabase
+          .from("appointments")
+          .update({ insurance_verified: false })
+          .eq("id", detectedApptId)
+          .eq("clinic_id", clinicId);
+        console.log(`[sms.handleInbound] clinicId=${clinicId} insurance unverified apptId=${detectedApptId}`);
       }
     }
 
@@ -410,7 +426,7 @@ async function sendFollowup(appointmentId) {
       `${appt.appointment_type}. How are you feeling? Please reply and let us know — ` +
       `we care about your recovery. —Bytelytic`;
 
-    return await send(
+    const result = await send(
       clinicId,
       appt.patient_phone,
       body,
@@ -418,6 +434,16 @@ async function sendFollowup(appointmentId) {
       appointmentId,
       appt.patient_id,
     );
+
+    if (result.success) {
+      await supabase
+        .from("appointments")
+        .update({ followup_sent: true })
+        .eq("id", appointmentId)
+        .eq("clinic_id", clinicId);
+    }
+
+    return result;
   } catch (error) {
     console.error(
       `[sms.sendFollowup] appointmentId=${appointmentId}`,

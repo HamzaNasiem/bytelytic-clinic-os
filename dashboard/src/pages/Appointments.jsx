@@ -14,8 +14,10 @@ import {
   X,
   Sparkles,
   Phone,
+  Users,
 } from "lucide-react";
 import api from "../lib/api";
+import WaitlistModal from "./WaitlistModal";
 import {
   format,
   parseISO,
@@ -319,6 +321,7 @@ const Appointments = () => {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [waitlistAppt, setWaitlistAppt] = useState(null);
 
   // Transcript panel state
   const [selectedAppt, setSelectedAppt] = useState(null);
@@ -499,6 +502,11 @@ const Appointments = () => {
                                             <span className="w-1.5 h-1.5 rounded-full bg-[#ba1a1a] shadow-[0_0_4px_#ba1a1a]"></span> HIGH RISK
                                           </span>
                                         )}
+                                        {apt.insurance_verified === false && (apt.status === "scheduled" || apt.status === "confirmed") && (
+                                          <span className="text-[0.6rem] font-bold px-1.5 py-0.5 rounded flex-shrink-0 flex items-center gap-1" style={{ backgroundColor: "#fff8e1", color: "#9a6800", border: "1px solid #ffd54f" }} title="Insurance Unverified">
+                                            ⚠️ UNVERIFIED
+                                          </span>
+                                        )}
                                       </div>
                                       <div className="flex items-center gap-1 mt-0.5">
                                         {apt.booked_by === "ai"
@@ -555,6 +563,15 @@ const Appointments = () => {
                                         </button>
                                       </>
                                     )}
+                                    {apt.status === "cancelled" && (
+                                      <button
+                                        onClick={() => setWaitlistAppt(apt)}
+                                        className="flex items-center gap-1 px-2.5 py-1 text-[0.7rem] font-bold rounded-full transition-colors whitespace-nowrap flex-shrink-0"
+                                        style={{ backgroundColor: "#e3f2fd", color: "#0d47a1" }}
+                                      >
+                                        <Users className="w-3 h-3 flex-shrink-0" /> Find Replacement
+                                      </button>
+                                    )}
                                     {apt.status === "confirmed" && (
                                       <button
                                         onClick={() => updateStatus(apt.id, "completed")}
@@ -594,6 +611,14 @@ const Appointments = () => {
         <NewApptModal
           onClose={() => setShowNewModal(false)}
           onCreated={() => fetchAppointments(activeTab)}
+        />
+      )}
+
+      {/* Waitlist Modal */}
+      {waitlistAppt && (
+        <WaitlistModal
+          appointment={waitlistAppt}
+          onClose={() => setWaitlistAppt(null)}
         />
       )}
     </div>

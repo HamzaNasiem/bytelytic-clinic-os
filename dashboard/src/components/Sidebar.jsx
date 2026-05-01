@@ -114,11 +114,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         {/* Schedule appointment CTA */}
         <div className="px-3 pb-3">
           <button
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-[0.625rem] font-bold text-sm transition-all hover:opacity-95 active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-1.5 py-3 px-2 rounded-[0.625rem] font-bold text-[0.8rem] sm:text-sm transition-all hover:opacity-95 active:scale-[0.98] whitespace-nowrap"
             style={{ backgroundColor: "#7FCD4D", color: "#1a3a2e" }}
           >
-            <CalendarPlus className="w-4 h-4" />
-            Schedule Appointment
+            <CalendarPlus className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">Schedule Appointment</span>
           </button>
         </div>
 

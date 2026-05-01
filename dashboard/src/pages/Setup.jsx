@@ -115,7 +115,7 @@ const Setup = () => {
 
   const connectGoogle = () => {
     const token = localStorage.getItem("sb-token");
-    const base = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const base = import.meta.env.PROD ? "https://clinic-os-production.up.railway.app" : (import.meta.env.VITE_API_URL || "http://localhost:3000");
     window.location.href = `${base}/auth/google?token=${encodeURIComponent(token)}`;
   };
 
@@ -139,8 +139,9 @@ const Setup = () => {
     }
   };
 
-  const webhookUrl = `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/webhooks/retell`;
-  const twilioWebhookUrl = `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/webhooks/twilio/sms`;
+  const apiUrl = import.meta.env.PROD ? "https://clinic-os-production.up.railway.app" : (import.meta.env.VITE_API_URL || "http://localhost:3000");
+  const webhookUrl = `${apiUrl}/webhooks/retell`;
+  const twilioWebhookUrl = `${apiUrl}/webhooks/twilio/sms`;
 
   const clinicInfo = JSON.parse(localStorage.getItem("clinic-info") || "{}");
 
@@ -306,7 +307,7 @@ const Setup = () => {
             <div className="space-y-4">
               <div>
                 <FieldLabel>Twilio Phone Number</FieldLabel>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <div className="flex items-center flex-1 gap-2 px-4 py-3 bg-surface-container rounded-[0.75rem]">
                     <Phone className="w-4 h-4 text-on-surface-variant flex-shrink-0" />
                     <input

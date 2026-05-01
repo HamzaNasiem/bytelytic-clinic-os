@@ -2,25 +2,18 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Appointments from './pages/Appointments';
 import Patients from './pages/Patients';
 import CallLogs from './pages/CallLogs';
 import Setup from './pages/Setup';
 
-// Dev mode: auto-set fake token so UI pages can be previewed without backend
-if (import.meta.env.DEV && !localStorage.getItem('sb-token')) {
-  localStorage.setItem('sb-token', 'dev-preview-token');
-  localStorage.setItem('clinic-info', JSON.stringify({
-    clinicId: 'dev-clinic-id',
-    clinicName: 'Bytelytic Clinic OS',
-    timezone: 'America/Chicago',
-  }));
-}
+// Dev mode fake token removed to allow proper signup flow
 
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = localStorage.getItem('sb-token') !== null;
-  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (!isAuthenticated) return <Navigate to="/signup" />;
   return children;
 };
 
@@ -30,6 +23,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route
             path="/"
             element={

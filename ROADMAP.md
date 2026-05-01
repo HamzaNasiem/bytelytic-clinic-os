@@ -444,14 +444,14 @@ const filtered = calls.filter(c => {
 
 ### 4. Insurance Pre-Verification SMS
 
-**Code:** `src/services/insurance.service.js` + `src/jobs/insurance.job.js` ← exists, untested
+**Code:** `src/services/insurance.service.js` + `src/jobs/insurance.job.js` ← ✅ Tested and Local
 
-- [ ] `insurance.service.js` — send insurance check SMS 48h before appointment
-- [ ] Message: "Hi [name]! Confirming your [insurance] is active for your visit on [date]. Reply YES to confirm."
-- [ ] If no response in 24h → flag `insurance_verified = false` in appointments table
-- [ ] Dashboard → Appointments → ⚠️ icon on unverified insurance
-- [ ] `insurance.job.js` — daily 09:00 UTC — processes tomorrow's appointments
-- [ ] Test: book appointment for day after tomorrow → insurance SMS sent → check appointment flag
+- [x] `insurance.service.js` — send insurance check SMS 48h before appointment
+- [x] Message: "Hi [name]! Confirming your [insurance] is active for your visit on [date]. Reply YES to confirm."
+- [x] If no response in 24h → flag `insurance_verified = false` in appointments table
+- [x] Dashboard → Appointments → ⚠️ icon on unverified insurance
+- [x] `insurance.job.js` — daily 09:00 UTC — processes tomorrow's appointments
+- [x] Test: book appointment for day after tomorrow → insurance SMS sent → check appointment flag
 
 ---
 

@@ -14,6 +14,7 @@ const patientsRoutes = require("./patients/patients.routes");
 const appointmentsRoutes = require("./appointments/appointments.routes");
 const dashboardRoutes = require("./dashboard/dashboard.routes");
 const callsRoutes = require("./calls/calls.routes");
+const waitlistRoutes = require("./waitlist/waitlist.routes");
 const voiceSvc = require("../services/voice.service");
 
 const router = express.Router();
@@ -27,6 +28,77 @@ router.use("/webhooks/twilio", twilioWebhook);
 // ─────────────────────────────────────────────────────────────
 // AUTH ROUTES
 // ─────────────────────────────────────────────────────────────
+
+// POST /auth/signup — Public registration
+router.post("/auth/signup", async (req, res, next) => {
+  try {
+    const {
+      email,
+      password,
+      clinicName,
+      timezone,
+      specialty,
+      city,
+      doctorName,
+      doctorCredentials,
+      doctorPhone,
+      businessHours,
+      appointmentTypes,
+    } = req.body;
+
+    if (!email || !password || !clinicName) {
+      return res.status(400).json({ error: "Email, password, and clinic name are required" });
+    }
+
+    const anonClient = createClient(env.supabaseUrl, env.supabaseAnonKey);
+    const { data: authData, error: authErr } = await anonClient.auth.signUp({
+      email,
+      password,
+    });
+
+    if (authErr) return res.status(400).json({ error: authErr.message });
+
+    const { data: clinic, error: clinicErr } = await supabase
+      .from("clinics")
+      .insert({
+        name: clinicName,
+        owner_email: email,
+        timezone: timezone || "America/Chicago",
+        specialty: specialty || null,
+        city: city || null,
+        primary_doctor_name: doctorName || null,
+        primary_doctor_credentials: doctorCredentials || null,
+        primary_doctor_phone: doctorPhone || null,
+        business_hours: businessHours || { "mon": "08:00-18:00", "tue": "08:00-18:00", "wed": "08:00-18:00", "thu": "08:00-18:00", "fri": "08:00-18:00" },
+        appointment_types: appointmentTypes || [{ name: "General Checkup", duration: 30 }],
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (clinicErr) {
+      console.error("[auth/signup] Failed to create clinic:", clinicErr.message);
+      
+      // Clean up the auth user if clinic creation fails
+      // Note: We'd need admin client to delete user, but for now we just return a friendly error
+      if (clinicErr.message.includes("clinics_owner_email_key")) {
+        return res.status(400).json({ error: "This email is already registered. Please sign in instead." });
+      }
+      
+      return res.status(500).json({ error: `Clinic setup failed: ${clinicErr.message}` });
+    }
+
+    return res.json({
+      token: authData.session?.access_token || null, // Might be null if email confirmation is required
+      clinicId: clinic.id,
+      clinicName: clinic.name,
+      timezone: clinic.timezone,
+      message: "Signup successful"
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // POST /auth/login — email/password → Supabase JWT
 router.post("/auth/login", async (req, res, next) => {
@@ -203,6 +275,7 @@ router.use("/patients", authenticate, patientsRoutes);
 router.use("/appointments", authenticate, appointmentsRoutes);
 router.use("/dashboard", authenticate, dashboardRoutes);
 router.use("/calls", authenticate, callsRoutes);
+router.use("/waitlist", authenticate, waitlistRoutes);
 
 // POST /clinics/:id/create-agent — one-time Retell AI agent creation
 router.post(

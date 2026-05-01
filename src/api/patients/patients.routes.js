@@ -95,7 +95,7 @@ router.get("/:id", async (req, res, next) => {
         .limit(20),
       supabase
         .from("sms_messages")
-        .select("id, direction, sms_type, body, status, created_at")
+        .select("id, direction, sms_type, body, status, created_at, reply_sentiment")
         .eq("clinic_id", req.clinicId)
         .eq("patient_id", req.params.id)
         .order("created_at", { ascending: false })
@@ -206,39 +206,27 @@ router.post("/:id/message", async (req, res, next) => {
       return res.status(404).json({ error: "Patient not found" });
     }
 
-    // Try to send via Twilio (will log even in dev mode)
+    // Try to send via Twilio (will log even in dev mode and save to DB)
     try {
       const smsSvc = require("../../services/sms.service");
-      await smsSvc.send({
-        clinicId: req.clinicId,
-        to: patient.phone,
-        body: message.trim(),
-        smsType: "manual",
-        patientId: patient.id,
-      });
+      const result = await smsSvc.send(
+        req.clinicId,
+        patient.phone,
+        message.trim(),
+        "manual",
+        null,
+        patient.id
+      );
+      
+      if (!result.success) {
+        return res.status(500).json({ error: "Failed to send SMS" });
+      }
+      
+      return res.status(201).json({ data: result });
     } catch (smsErr) {
       console.error("[patients/message] SMS send failed:", smsErr.message);
-      // Still save to DB even if Twilio fails
+      return res.status(500).json({ error: "Failed to send SMS" });
     }
-
-    // Save to sms_messages table
-    const { data: smsRecord, error: smsErr } = await supabase
-      .from("sms_messages")
-      .insert({
-        clinic_id: req.clinicId,
-        patient_id: patient.id,
-        to_number: patient.phone,
-        body: message.trim(),
-        direction: "outbound",
-        sms_type: "manual",
-        status: "sent",
-      })
-      .select()
-      .single();
-
-    if (smsErr) return res.status(400).json({ error: smsErr.message });
-
-    return res.status(201).json({ data: smsRecord });
   } catch (error) {
     next(error);
   }

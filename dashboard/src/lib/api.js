@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-// Get API URL from env or fallback to local dev server
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Dynamically choose API based on environment
+const API_URL = import.meta.env.PROD 
+  ? 'https://clinic-os-production.up.railway.app' 
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3000');
 
 const api = axios.create({
   baseURL: API_URL,
@@ -29,9 +31,9 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('sb-token');
       localStorage.removeItem('clinic-info');
-      // Redirect to login handled at component level or via window location wrapper
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      // Redirect to signup handled at component level or via window location wrapper
+      if (window.location.pathname !== '/signup' && window.location.pathname !== '/login') {
+        window.location.href = '/signup';
       }
     }
     return Promise.reject(error);

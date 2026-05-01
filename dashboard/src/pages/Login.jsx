@@ -141,6 +141,11 @@ const Login = () => {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               )}
             </button>
+
+            <div className="text-center mt-6">
+              <span className="text-sm text-on-surface-variant">Don't have an account? </span>
+              <a href="/signup" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">Sign up</a>
+            </div>
           </form>
         </div>
       </div>

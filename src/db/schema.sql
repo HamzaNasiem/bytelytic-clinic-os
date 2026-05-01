@@ -12,6 +12,11 @@ CREATE TABLE clinics (
   id                       UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   name                     TEXT        NOT NULL,
   owner_email              TEXT        UNIQUE NOT NULL,
+  specialty                TEXT,
+  city                     TEXT,
+  primary_doctor_name      TEXT,
+  primary_doctor_credentials TEXT,
+  primary_doctor_phone     TEXT,
   phone_number             TEXT,                                         -- Twilio number assigned to clinic
   twilio_number            TEXT,                                         -- same as above, kept for clarity
   retell_agent_id          TEXT,                                         -- Retell AI agent ID for this clinic
@@ -161,6 +166,20 @@ CREATE TABLE revenue_events (
   created_at     TIMESTAMPTZ DEFAULT NOW()
 );
 
+
+-- ============================================================
+-- WAITLIST
+-- ============================================================
+CREATE TABLE IF NOT EXISTS waitlist (
+  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  clinic_id        UUID        REFERENCES clinics(id) ON DELETE CASCADE,
+  patient_id       UUID        REFERENCES patients(id) ON DELETE CASCADE,
+  appointment_type TEXT        NOT NULL,
+  preferred_dates  JSONB       DEFAULT '[]'::jsonb,
+  status           TEXT        CHECK (status IN ('pending', 'fulfilled', 'cancelled')) DEFAULT 'pending',
+  created_at       TIMESTAMPTZ DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ DEFAULT NOW()
+);
 
 -- ============================================================
 -- INDEXES for performance
