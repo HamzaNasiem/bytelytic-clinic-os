@@ -86,7 +86,8 @@ const config = {
   // App URLs
   apiBaseUrl: process.env.API_BASE_URL,
   dashboardUrl: process.env.DASHBOARD_URL,
-  webhookBaseUrl: process.env.WEBHOOK_BASE_URL,
+  // Email
+  resendApiKey: process.env.RESEND_API_KEY,
 };
 
 config.SUPABASE_URL = config.supabaseUrl;

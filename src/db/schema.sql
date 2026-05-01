@@ -182,6 +182,18 @@ CREATE TABLE IF NOT EXISTS waitlist (
 );
 
 -- ============================================================
+-- TABLE 8: phone_pool (Twilio Number Provisioning)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS phone_pool (
+  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  phone_number     TEXT        NOT NULL UNIQUE,
+  is_assigned      BOOLEAN     DEFAULT false,
+  assigned_to      UUID        REFERENCES clinics(id) ON DELETE SET NULL,
+  assigned_at      TIMESTAMPTZ,
+  created_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================
 -- INDEXES for performance
 -- ============================================================
 CREATE INDEX idx_appointments_clinic_datetime ON appointments(clinic_id, datetime);
