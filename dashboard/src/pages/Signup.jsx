@@ -302,6 +302,7 @@ const Signup = () => {
                 </button>
               )}
             </div>
+            </div>
           )}
         </div>
       </div>
